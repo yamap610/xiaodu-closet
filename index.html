@@ -146,7 +146,56 @@ let view='home',kid='90',f={st:'all',cat:'all',size:'all',season:'all'};
 let sell={step:1,sel:new Set(),layout:4,title:'小嘟二手衣出清',note:'台北可面交｜賣貨便寄送｜留言 +1'};
 let bm=false,bsel=new Set(),lastList=[];
 try{const sv=JSON.parse(localStorage.getItem('xd-closet')||'null');if(sv&&sv.items&&sv.items.length){items=sv.items;nid=sv.nid;kid=sv.kid||kid}}catch(e){}
-const persist=()=>{try{localStorage.setItem('xd-closet',JSON.stringify({items,nid,kid}))}catch(e){}};
+const persist=()=>{try{localStorage.setItem('xd-closet',JSON.stringify({items,nid,kid}))}catch(e){};schedule()};
+/* ☁️ 雲端：Firebase（資料）＋ Cloudinary（照片） */
+const FB={apiKey:"AIzaSyAFGSQOvAp1thZkWBZ-nLHe-uR8llDQDI8",authDomain:"home-hub-be41f.firebaseapp.com",projectId:"home-hub-be41f",storageBucket:"home-hub-be41f.firebasestorage.app",messagingSenderId:"286497032414",appId:"1:286497032414:web:16d3f0242a400d0de85a4f"};
+const CL_CLOUD='dxd5ijwof',CL_PRESET='ml_default',COL='xiaodu_closet',FBV='10.12.0';
+let fdb=null,fs=null,synced=new Map(),syncState='☁️ 連線中…',syncT=0,ready=false,lastKid=null,busy=false;
+const js=i=>JSON.stringify(i);
+const order=a=>a.sort((x,y)=>(y.added||0)-(x.added||0)||x.id-y.id);
+const errMsg=e=>e&&e.code=='permission-denied'?'沒有寫入權限（要調整 Firestore 規則）':String((e&&(e.code||e.message))||e);
+function setSync(t){syncState=t;const el=$('#sync');if(el)el.textContent=t}
+function applyRemote(snap){
+  const arr=[];snap.forEach(d=>arr.push(d.data()));order(arr);
+  synced=new Map(arr.map(i=>[i.id,js(i)]));
+  if(js(arr)!==js(items)){items=arr;nid=Math.max(nid,...arr.map(i=>i.id+1));if(!draft)render();else persistLocal()}
+}
+const persistLocal=()=>{try{localStorage.setItem('xd-closet',JSON.stringify({items,nid,kid}))}catch(e){}};
+async function commitOps(ops){for(let k=0;k<ops.length;k+=400){const b=fs.writeBatch(fdb);ops.slice(k,k+400).forEach(o=>o(b));await b.commit()}}
+async function cloudInit(){
+  try{
+    const [A,F]=await Promise.all([import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-app.js`),import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-firestore.js`)]);
+    fs=F;fdb=F.initializeFirestore(A.initializeApp(FB,'xiaodu'),{ignoreUndefinedProperties:true});
+    const ms=await F.getDoc(F.doc(fdb,COL+'_settings','main'));
+    if(ms.exists()&&ms.data().kid){kid=ms.data().kid}lastKid=kid;
+    const snap=await F.getDocs(F.collection(fdb,COL));
+    if(snap.empty&&items.length){
+      setSync('☁️ 第一次同步：上傳 '+items.length+' 件資料中…');
+      await commitOps(items.map(i=>b=>b.set(F.doc(fdb,COL,String(i.id)),i)));
+      await F.setDoc(F.doc(fdb,COL+'_settings','main'),{kid});
+      synced=new Map(items.map(i=>[i.id,js(i)]));
+    }else applyRemote(snap);
+    ready=true;setSync('☁️ 已同步');render();
+    F.onSnapshot(F.collection(fdb,COL),s=>{if(!s.metadata.hasPendingWrites)applyRemote(s)},e=>setSync('⚠️ '+errMsg(e)));
+  }catch(e){setSync('⚠️ 雲端連線失敗：'+errMsg(e));toast('雲端連線失敗，資料先存在這支手機')}
+}
+function schedule(){if(!ready)return;clearTimeout(syncT);syncT=setTimeout(syncNow,700)}
+async function syncNow(){
+  const F=fs,ops=[],done=[],ids=new Set();
+  for(const i of items){ids.add(i.id);const j=js(i);if(synced.get(i.id)!==j){ops.push(b=>b.set(F.doc(fdb,COL,String(i.id)),i));done.push([i.id,j])}}
+  const gone=[...synced.keys()].filter(id=>!ids.has(id));
+  gone.forEach(id=>ops.push(b=>b.delete(F.doc(fdb,COL,String(id)))));
+  const k=kid;if(k!==lastKid)ops.push(b=>b.set(F.doc(fdb,COL+'_settings','main'),{kid:k},{merge:true}));
+  if(!ops.length)return;
+  setSync('☁️ 同步中…');
+  try{await commitOps(ops);done.forEach(([id,j])=>synced.set(id,j));gone.forEach(id=>synced.delete(id));lastKid=k;setSync('☁️ 已同步')}
+  catch(e){setSync('⚠️ 同步失敗：'+errMsg(e));toast('雲端同步失敗，請到設定查看')}
+}
+async function upload(dataUrl){
+  const fd=new FormData();fd.append('file',dataUrl);fd.append('upload_preset',CL_PRESET);
+  const r=await fetch(`https://api.cloudinary.com/v1_1/${CL_CLOUD}/image/upload`,{method:'POST',body:fd});
+  if(!r.ok)throw new Error('照片上傳失敗 '+r.status);return (await r.json()).secure_url;
+}
 const heart=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6c-.5 0-.9-.2-1.3-.5C6.4 16.7 2.2 13.4 2.2 8.8c0-2.9 2.3-5.3 5.2-5.3 1.9 0 3.5 1 4.6 2.5 1.1-1.5 2.7-2.5 4.6-2.5 2.9 0 5.2 2.4 5.2 5.3 0 4.6-4.2 7.9-8.5 11.3-.4.3-.8.5-1.3.5z" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
 let draft=null,delArm=false,clr=false,pics=[],gt=0,tt=0,genTok=0;
 const byId=id=>items.find(i=>i.id==id);
@@ -213,7 +262,7 @@ function setV(){
   return `<section class="sec"><header class="top" style="padding-inline:0"><h1>設定</h1></header>
   <div class="box"><div class="h3">📏 小嘟現在穿幾號？</div><p class="hint">換尺寸後，衣櫥會提醒哪些衣服可能穿不下了。</p><div class="wrap">${SIZES.map(s=>chip('kid','',s,s,kid==s)).join('')}</div>
   <button class="btn" style="margin-top:12px;width:100%" data-act="auto">依尺寸自動整理 🌱 → 👕</button><p class="hint" style="margin:6px 0 0">把尺寸已經合穿的「未來穿」移到「現在穿」。</p></div>
-  <div class="box"><div class="h3">☁️ 資料儲存</div><p class="hint" style="margin:0">目前是<b>原型模式</b>：你的修改先存在這支手機的瀏覽器裡，換手機或清除瀏覽器資料就會不見。正式版會連接 <b>Firebase</b>（存衣服資料）和 <b>Cloudinary</b>（存照片），換手機也不怕不見。</p></div>
+  <div class="box"><div class="h3">☁️ 資料儲存</div><p class="hint" style="margin:0">衣服資料存在 <b>Firebase</b>，新增的照片會上傳到 <b>Cloudinary</b>，手機、電腦打開都是同一份。</p><p id="sync" style="margin:8px 0 0;font-size:14px">${syncState}</p></div>
   <div class="box"><div class="h3">💾 備份</div><p class="hint">定期匯出一份備份檔存起來，換手機時可以匯入。</p><div class="wrap"><button class="btn" data-act="exp">匯出備份</button><label class="btn ghost" style="display:inline-flex;align-items:center;cursor:pointer">匯入備份<input type="file" accept=".json,application/json" id="imp" hidden></label></div></div>
   <div class="box"><button class="btn ghost" style="width:100%" data-act="clear">${clr?'再按一次確認清空':'清空全部資料'}</button></div></section>`;
 }
@@ -264,15 +313,20 @@ function viewHTML(d){
   <div class="info">${row('狀態',s[1]+' '+s[2])}${row('季節',se(d.season)+' '+esc(d.season))}${row('品牌',esc(d.brand))}${row('購入金額',d.cost?'$'+d.cost:'')}${d.status=='sell'?row('售價',d.price?'$'+d.price:'未填'):''}${d.status=='sold'?row('賣出金額',d.sold?'$'+d.sold:''):''}${row('新舊程度',(d.status=='sell'||d.status=='sold')?esc(d.cond):'')}</div>
   <div class="acts"><button class="btn ghost wide" data-act="close2">關閉</button><button class="btn wide" data-act="edit">✏️ 編輯</button></div></div></div>`;
 }
-function save(){
+async function save(){
+  if(busy)return;
   const d=draft,size=String(d.size||'').trim();
   if(!size){toast('請選尺寸');return}
   const base={cat:d.cat,size,season:d.season,brand:String(d.brand||'').trim(),cost:d.cost,status:d.status,price:d.price,cond:d.cond,sold:d.sold};
   if(!d.id){
     if(!d.imgs.length){toast('請先選照片 📷');return}
-    d.imgs.forEach(img=>items.unshift({id:nid++,img,fav:false,...base}));
-    toast(`已新增 ${d.imgs.length} 件 ✨`);
-  }else{const it=byId(d.id);Object.assign(it,base,{img:d.img});toast('已儲存');render();openForm(it);return}
+    busy=true;const n=d.imgs.length,now=Date.now(),urls=[];let bad=0;
+    for(let k=0;k<n;k++){toast(`上傳照片中 ${k+1}/${n}…`);try{urls.push(await upload(d.imgs[k]))}catch(e){urls.push(d.imgs[k]);bad++}}
+    busy=false;
+    urls.forEach((img,k)=>items.unshift({id:nid++,img,fav:false,added:now+k,...base}));
+    toast(bad?`已新增 ${n} 件，但有 ${bad} 張照片沒上傳成功`:`已新增 ${n} 件 ✨`);
+  }else{let img=d.img;if(img.startsWith('data:')){busy=true;toast('上傳照片中…');try{img=await upload(img)}catch(e){toast('照片上傳失敗，先存在這支手機')}busy=false}
+    const it=byId(d.id);Object.assign(it,base,{img});toast('已儲存');render();openForm(it);return}
   draft=null;sheet();render();
 }
 function compress(file){
@@ -282,7 +336,7 @@ function compress(file){
 }
 
 /* 出售圖片 */
-const loadImg=src=>new Promise(r=>{const m=new Image();m.onload=()=>r(m);m.onerror=()=>r(null);m.src=src});
+const loadImg=src=>new Promise(r=>{const m=new Image();if(/^https?:/.test(src))m.crossOrigin='anonymous';m.onload=()=>r(m);m.onerror=()=>r(null);m.src=src});
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 function fit(c,t,w){t=String(t);if(c.measureText(t).width<=w)return t;while(t.length&&c.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
 async function drawPage(list,per,n,total){
@@ -371,7 +425,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{
   const t=e.target;
   if(t.dataset.dk&&draft){draft[t.dataset.dk]=['cost','price','sold'].includes(t.dataset.dk)?num(t.value):t.value}
-  else if(t.dataset.pid){const i=byId(+t.dataset.pid);i.price=num(t.value);t.closest('.prow').querySelectorAll('[data-act=qp]').forEach(b=>b.classList.toggle('on',b.dataset.v==i.price))}
+  else if(t.dataset.pid){const i=byId(+t.dataset.pid);i.price=num(t.value);persist();t.closest('.prow').querySelectorAll('[data-act=qp]').forEach(b=>b.classList.toggle('on',b.dataset.v==i.price))}
   else if(t.dataset.sk){sell[t.dataset.sk]=t.value;clearTimeout(gt);gt=setTimeout(gen,400)}
 });
 document.addEventListener('change',async e=>{
@@ -383,6 +437,7 @@ document.addEventListener('change',async e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&draft){draft=null;sheet()}});
 render();
+cloudInit();
 }
 </script>
 </body></html>
