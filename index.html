@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>小嘟衣櫥</title>
+<style>
+/* VOICE: 溫柔、安靜的日系手帳感
+IDEA: 一本翻開的童裝型錄
+PICTURE: 衣服照片方格牆本身
+COLOUR and TYPE: 奶茶米底＋莫蘭迪粉綠，jf open 粉圓體
+LAYOUT: 手機優先；標題＋篩選、雙欄卡片、底部導覽 */
+@font-face{font-family:Huninn;src:url(fonts/huninn.woff2) format('woff2');font-display:swap}
+:root{color-scheme:light dark;--bg:light-dark(#f3ece3,#211c18);--card:light-dark(#fffaf4,#2d2621);--ink:light-dark(#4b3f36,#efe5da);--mute:light-dark(#9a8a7b,#a89786);--line:light-dark(#e7dccf,#3e342d);--soft:light-dark(#ebe0d2,#3a302a);--tea:#b08968;--teaD:light-dark(#8f6b4f,#d2b394);--rose:#c79f97}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Huninn,system-ui,sans-serif;overflow-x:clip}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.top{padding:calc(env(safe-area-inset-top) + 18px) 16px 6px}
+.top h1{margin:0;font-size:28px;line-height:1.1;font-weight:700;letter-spacing:.02em}
+.top p{margin:4px 0 0;color:var(--mute);font-size:13px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:6px 16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:14px;min-height:38px;white-space:nowrap}
+.chip.on{background:var(--tea);border-color:var(--tea);color:#fff}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.row{display:flex;gap:8px;align-items:center;padding:4px 16px}
+select{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 10px;font-size:16px;min-height:40px}
+.cnt{margin-left:auto;color:var(--mute);font-size:13px;white-space:nowrap}
+.banner{display:block;margin:8px 16px 0;padding:10px 14px;border-radius:14px;background:var(--soft);border:0;width:calc(100% - 32px);text-align:left;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:12px 16px 130px}
+.card{position:relative;display:block;border:0;padding:0;text-align:left;background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 1px 2px rgba(80,60,40,.08)}
+.card img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#fff}
+.meta{display:block;padding:8px 10px 10px;font-size:13px}
+.meta b{font-weight:500}
+.meta small{color:var(--mute);font-size:12px}
+.sz{float:right;background:var(--soft);border-radius:8px;padding:0 7px;font-size:12px}
+.fav{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;background:rgba(255,250,244,.85);display:grid;place-items:center;font-size:17px;color:#cbbcae}
+.fav.on{color:#c9827a}
+.tag{position:absolute;left:8px;top:8px;background:var(--tea);color:#fff;border-radius:10px;padding:2px 9px;font-size:13px;font-weight:700}
+.chk{position:absolute;inset:0;border:3px solid transparent;border-radius:18px;pointer-events:none}
+.card.sel .chk{border-color:var(--tea)}
+.ck{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.18);display:grid;place-items:center;color:#fff;font-size:15px;font-weight:700}
+.card.sel .ck{background:var(--tea)}
+.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:48px 0}
+nav{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);z-index:5}
+nav button{border:0;background:none;display:grid;justify-items:center;gap:1px;font-size:11px;color:var(--mute);min-height:48px}
+nav button i{font-style:normal;font-size:21px}
+nav button.on{color:var(--teaD);font-weight:700}
+nav .add i{width:54px;height:54px;margin-top:-24px;border-radius:50%;background:var(--tea);color:#fff;display:grid;place-items:center;font-size:30px;box-shadow:0 4px 12px rgba(176,137,104,.45)}
+.sec{padding:4px 16px 150px}
+.h2{font-size:20px;font-weight:700;margin:12px 0 2px}
+.h3{font-size:16px;font-weight:700;margin:0 0 6px}
+.hint{color:var(--mute);font-size:13px;margin:0 0 10px}
+.bar{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 62px);padding:18px 16px 10px;display:flex;gap:10px;align-items:center;background:linear-gradient(transparent,var(--bg) 35%);z-index:4}
+.btn{border:0;border-radius:14px;padding:12px 18px;min-height:46px;background:var(--tea);color:#fff;font-weight:700;font-size:15px;white-space:nowrap}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn.wide{flex:1}
+.btn:disabled{opacity:.45}
+.prow{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;background:var(--card);border-radius:18px;padding:10px;margin-bottom:10px}
+.prow img{width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px}
+.pin{display:flex;align-items:center;gap:6px;margin:6px 0;border:2px solid var(--tea);border-radius:12px;padding:0 10px;background:var(--bg)}
+.pin span{font-weight:700;color:var(--teaD);font-size:20px}
+.pin input{border:0;background:none;outline:0;font-size:20px;font-weight:700;width:100%;padding:7px 0}
+.mini{display:flex;flex-wrap:wrap;gap:6px}
+.mini .chip{min-height:32px;padding:3px 10px;font-size:13px}
+.unify{display:flex;gap:8px;align-items:center;background:var(--soft);border-radius:14px;padding:8px 10px;margin-bottom:12px;font-size:14px}
+.unify input{width:90px;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:16px;background:var(--card)}
+.unify .btn{min-height:38px;padding:6px 14px}
+.fld{margin:14px 0}
+.fld>label,.fld>b{display:block;font-size:13px;color:var(--mute);font-weight:500;margin-bottom:6px}
+.txt{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:16px;background:var(--bg)}
+.prev{display:grid;gap:12px;margin-top:12px}
+.prev img{width:100%;border-radius:14px;box-shadow:0 2px 10px rgba(80,60,40,.14)}
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(40,30,22,.42);display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:14px 18px calc(env(safe-area-inset-bottom) + 18px)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.ph{display:grid;place-items:center;gap:2px;border:2px dashed var(--line);border-radius:18px;padding:20px;text-align:center;color:var(--mute);cursor:pointer}
+.ph b{color:var(--ink);font-weight:500}
+.thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:8px}
+.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:10px;flex:none}
+.big{width:100%;height:auto;max-height:62vh;object-fit:contain;background:#fff;border-radius:18px;display:block}
+.info{margin:14px 0 4px;display:grid;gap:0}.info div{display:flex;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px}.info span{color:var(--mute)}.info b{font-weight:400;text-align:right}
+.fav svg{width:19px;height:19px}.vfav svg{width:24px;height:24px}
+.vfav{display:grid;place-items:center;position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,250,244,.9);font-size:20px;color:#cbbcae}.vfav.on{color:#c9827a}
+.acts{display:flex;gap:10px;margin-top:18px;align-items:center}
+.danger{background:none;border:0;color:#b5706a;padding:10px 4px;min-height:44px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}
+.stat div{background:var(--card);border-radius:18px;padding:14px}
+.stat b{display:block;font-size:clamp(22px,7vw,28px);line-height:1.15;white-space:nowrap}
+.stat small{color:var(--mute);font-size:12px}
+.hb{display:grid;grid-template-columns:6.8em minmax(0,1fr) 2em;gap:8px;align-items:center;font-size:14px;margin:7px 0}
+.hb i{display:block;height:12px;border-radius:6px;background:var(--rose);min-width:4px}
+.hb span:last-child{text-align:right;color:var(--mute)}
+.box{background:var(--card);border-radius:18px;padding:14px 16px;margin:10px 0}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 150px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;z-index:20;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+:focus-visible{outline:2px solid var(--tea);outline-offset:2px}
+@media(min-width:760px){.grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}#app{max-width:960px;margin:auto}}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style></head>
+<body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<div id="sheet"></div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+{
+const CATS=[['上衣','👚'],['褲子','👖'],['裙子','🎀'],['洋裝','👗'],['連身','🧸'],['背心外套','🧥'],['睡衣','🌙'],['配件','🧢']];
+const SIZES=['70','80','90','100','110','18m','24m','2T'];
+const RANK={'70':70,'80':80,'18m':85,'90':90,'24m':90,'2T':95,'100':100,'110':110};
+const SEAS=[['春夏','🌸'],['秋冬','🍂'],['四季皆可','🌿']];
+const STS=[['now','👕','現在穿'],['future','🌱','未來穿'],['sell','💰','準備賣'],['sold','✅','已售出'],['gift','🎁','已送人'],['keep','💝','收藏紀念'],['out','🧺','已淘汰']];
+const CONDS=['全新','近新','良好','有使用痕跡'];
+const SELLABLE=['now','future','keep','sell'];
+const ce=c=>(CATS.find(x=>x[0]==c)||[0,'👕'])[1];
+const se=s=>(SEAS.find(x=>x[0]==s)||[0,''])[1];
+const st=s=>STS.find(x=>x[0]==s)||STS[0];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=v=>String(v||'').replace(/\D/g,'');
+
+/* 範例插圖（原型用，正式版換成你的照片） */
+const TEE='M70 62L102 46Q120 62 138 46L170 62L192 98L166 110L160 96L160 182L80 182L80 96L74 110L48 98Z';
+const SH={'上衣':TEE,'睡衣':TEE,
+'褲子':'M82 48H158L168 188H132L120 100L108 188H72Z',
+'裙子':'M88 58H152L182 168Q120 184 58 168Z',
+'洋裝':'M98 40H142L148 78L178 182Q120 196 62 182L92 78Z',
+'連身':'M78 56L102 44Q120 60 138 44L162 56L180 88L160 96L156 84L156 148L162 186H128L120 162L112 186H78L84 148L84 84L80 96L60 88Z',
+'背心外套':'M84 44H104Q120 80 136 44H156L168 184H72Z',
+'配件':'M70 140Q70 78 120 78Q170 78 170 140ZM52 140H188Q188 158 120 158Q52 158 52 140Z'};
+function art(cat,c,p){
+  const d=SH[cat];let x='',y2='';
+  if(p==1)for(let y=60;y<200;y+=18)x+=`<rect x="0" y="${y}" width="240" height="7" fill="#fff" opacity=".45"/>`;
+  if(p==2)for(let y=60;y<200;y+=22)for(let k=40;k<210;k+=22)x+=`<circle cx="${k+(y%44?11:0)}" cy="${y}" r="3.5" fill="#fff" opacity=".6"/>`;
+  if(p==3)x=[[100,90],[140,120],[108,150],[148,166]].map(([a,b])=>`<path d="M${a} ${b-7}l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff8e0"/>`).join('');
+  if(cat=='背心外套')y2=[96,116,136,156].map(y=>`<circle cx="120" cy="${y}" r="3.5" fill="#00000030"/>`).join('');
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><defs><clipPath id="k"><path d="${d}"/></clipPath></defs><rect width="240" height="240" fill="#f6efe6"/><ellipse cx="120" cy="202" rx="74" ry="8" fill="#000" opacity=".06"/><path d="${d}" fill="${c}"/><g clip-path="url(#k)">${x}</g>${y2}<path d="${d}" fill="none" stroke="#00000024" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+const PH="連夏,外冬,上冬,洋夏,洋夏,洋夏,外冬,洋夏,洋夏,洋夏,連夏,連夏,上冬,連夏,洋夏,連夏,連冬,連夏,上冬,外冬,洋夏,洋夏,洋夏,洋夏,洋夏,連夏,連夏,連夏,洋夏,洋夏,洋夏,洋夏,洋夏,洋夏,上夏,連夏,上夏,連夏,連四,連四,洋夏,連夏,連夏,褲夏,連夏,洋夏,洋夏,連冬,外冬,洋夏,洋夏,洋夏,洋夏,上冬,上冬,上冬,洋四,上冬,上冬,洋四,上冬,上冬,上冬,上冬,外冬,洋夏,連冬,外冬,外冬,上夏,洋四,上冬,連冬,外冬,連四,連冬,連夏,上夏,連夏,洋夏,洋夏,連夏,連夏,連夏,上夏,洋夏,褲夏,褲夏,上夏,洋夏,洋夏,洋夏,洋夏,上冬,洋夏,洋冬,洋夏,洋夏,連夏,洋夏,洋夏,洋四,洋夏,連夏,洋夏,洋夏,洋夏,洋夏,洋夏,洋夏,洋夏,裙夏,連四,洋夏,上夏,洋夏,洋冬,洋夏,上冬,上冬,洋四,上夏,外四,外冬,外冬,外冬,洋夏,外冬,洋冬,連夏,外冬,上冬,外冬,外冬,連夏,洋夏,上夏,洋夏,睡四,睡四,外冬,外冬,洋夏,洋夏,外夏,連夏,連夏,上冬,洋冬,上冬,連四,洋冬,洋冬,連冬,洋冬,洋冬,洋夏,洋夏,洋夏,洋夏,裙夏,洋夏,洋夏,洋夏,洋四,洋冬,連冬,洋夏,連四,連四,連冬,洋夏,上夏,連夏,上夏,褲夏,上冬,連冬,裙夏,連夏";
+const PC={"上": "上衣", "褲": "褲子", "裙": "裙子", "洋": "洋裝", "連": "連身", "外": "背心外套", "睡": "睡衣", "配": "配件"},PS={"夏": "春夏", "冬": "秋冬", "四": "四季皆可"};
+let nid=1;
+let items=PH.split(',').map((t,k)=>({id:nid++,img:`photos/${String(k+1).padStart(3,'0')}.jpg`,cat:PC[t[0]],size:'未填',season:PS[t[1]],brand:'',cost:'',status:'now',fav:false,price:'',cond:'',sold:''}));
+
+let view='home',kid='90',f={st:'all',cat:'all',size:'all',season:'all'};
+let sell={step:1,sel:new Set(),layout:4,title:'小嘟二手衣出清',note:'台北可面交｜賣貨便寄送｜留言 +1'};
+let bm=false,bsel=new Set(),lastList=[];
+try{const sv=JSON.parse(localStorage.getItem('xd-closet')||'null');if(sv&&sv.items&&sv.items.length){items=sv.items;nid=sv.nid;kid=sv.kid||kid}}catch(e){}
+const persist=()=>{try{localStorage.setItem('xd-closet',JSON.stringify({items,nid,kid}))}catch(e){}};
+const heart=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6c-.5 0-.9-.2-1.3-.5C6.4 16.7 2.2 13.4 2.2 8.8c0-2.9 2.3-5.3 5.2-5.3 1.9 0 3.5 1 4.6 2.5 1.1-1.5 2.7-2.5 4.6-2.5 2.9 0 5.2 2.4 5.2 5.3 0 4.6-4.2 7.9-8.5 11.3-.4.3-.8.5-1.3.5z" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+let draft=null,delArm=false,clr=false,pics=[],gt=0,tt=0,genTok=0;
+const byId=id=>items.find(i=>i.id==id);
+const small=i=>i.status=='now'&&RANK[i.size]&&RANK[i.size]<RANK[kid];
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)}
+const chip=(act,k,v,label,on)=>`<button class="chip${on?' on':''}" data-act="${act}" data-k="${k}" data-v="${esc(v)}">${label}</button>`;
+
+function renderNav(){
+  const N=[['home','🏠','衣櫥'],['sell','💰','賣衣服'],['add','＋','新增'],['stats','📊','統計'],['set','⚙️','設定']];
+  $('#nav').innerHTML=N.map(([k,e,l])=>`<button class="${k=='add'?'add':''}${view==k?' on':''}" data-act="nav" data-v="${k}" aria-label="${l}"><i>${e}</i>${l}</button>`).join('');
+}
+function card(i){
+  const s=st(i.status);
+  return `<button class="card" data-act="open" data-id="${i.id}"><img src="${i.img}" alt="${esc(i.cat)}" loading="lazy">${i.status=='sell'&&i.price?`<span class="tag">$${i.price}</span>`:''}${i.fav?`<span class="fav on" aria-label="最愛">${heart(1)}</span>`:''}<span class="meta"><span class="sz">${esc(i.size)}</span><b>${ce(i.cat)} ${esc(i.cat)}</b><br><small>${se(i.season)} ${esc(i.season)} · ${s[1]} ${s[2]}</small></span></button>`;
+}
+function bcard(i){const on=bsel.has(i.id);return `<button class="card${on?' sel':''}" data-act="bpick" data-id="${i.id}" aria-pressed="${on}"><img src="${i.img}" alt="" loading="lazy"><span class="chk"></span><span class="ck">${on?'✓':''}</span><span class="meta"><span class="sz">${esc(i.size)}</span><b>${ce(i.cat)} ${esc(i.cat)}</b><br><small>${se(i.season)} ${esc(i.season)} · ${st(i.status)[1]} ${st(i.status)[2]}</small></span></button>`}
+function home(){
+  const list=items.filter(i=>(f.st=='all'||(f.st=='fav'?i.fav:f.st=='small'?small(i):i.status==f.st))&&(f.cat=='all'||i.cat==f.cat)&&(f.size=='all'||i.size==f.size)&&(f.season=='all'||i.season==f.season));
+  const nNow=items.filter(i=>i.status=='now').length,nSmall=items.filter(small).length;
+  const sizes=[...new Set(items.map(i=>i.size))].sort((a,b)=>(RANK[a]||999)-(RANK[b]||999));
+  lastList=list.map(i=>i.id);
+  return `<header class="top" style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><h1>小嘟衣櫥</h1><p>共 ${items.length} 件 · 現在穿 ${nNow} 件 · 小嘟目前 ${kid} 號</p></div>${chip('bm','','',bm?'✕ 結束整理':'☑️ 批次整理',bm)}</header>
+  ${nSmall&&f.st!='small'?`<button class="banner" data-act="f" data-k="st" data-v="small">📏 有 ${nSmall} 件「現在穿」比 ${kid} 號小，可能穿不下了 → 看看</button>`:''}
+  <div class="chips">${chip('f','st','all','全部',f.st=='all')}${STS.map(s=>chip('f','st',s[0],s[1]+' '+s[2],f.st==s[0])).join('')}${chip('f','st','fav','❤️ 最愛',f.st=='fav')}${f.st=='small'?chip('f','st','small','📏 可能穿不下',true):''}</div>
+  <div class="chips">${chip('f','cat','all','全部類別',f.cat=='all')}${CATS.map(c=>chip('f','cat',c[0],c[1]+' '+c[0],f.cat==c[0])).join('')}</div>
+  <div class="row"><select data-sel="size" aria-label="尺寸"><option value="all">全部尺寸</option>${sizes.map(s=>`<option value="${esc(s)}"${f.size==s?' selected':''}>${esc(s)}</option>`).join('')}</select><select data-sel="season" aria-label="季節"><option value="all">全部季節</option>${SEAS.map(s=>`<option value="${s[0]}"${f.season==s[0]?' selected':''}>${s[1]} ${s[0]}</option>`).join('')}</select><span class="cnt">${list.length} 件</span></div>
+  <div class="grid">${list.map(bm?bcard:card).join('')||'<div class="empty">這裡還沒有衣服 🧺<br>按下方 ＋ 新增</div>'}</div>${bm?`<div class="bar"><button class="btn ghost" data-act="ball">${list.length&&list.every(i=>bsel.has(i.id))?'取消全選':'全選這 '+list.length+' 件'}</button><button class="btn wide" data-act="bset"${bsel.size?'':' disabled'}>設定已選 ${bsel.size} 件 →</button></div>`:''}`;
+}
+function sellV(){
+  if(sell.step==1){
+    const pool=items.filter(i=>SELLABLE.includes(i.status));
+    return `<section class="sec"><div class="h2">① 挑選要賣的衣服</div><p class="hint">點照片就能勾選，穿不下或不喜歡的都可以。</p>
+    <div class="chips" style="padding:0 0 8px">${chip('quick','','sell','💰 選全部「準備賣」',false)}${chip('quick','','small','📏 選可能穿不下的',false)}${chip('quick','','none','取消全選',false)}</div>
+    <div class="grid" style="padding:0">${pool.map(i=>{const on=sell.sel.has(i.id),s=st(i.status);return `<button class="card${on?' sel':''}" data-act="pick1" data-id="${i.id}" aria-pressed="${on}"><img src="${i.img}" alt=""><span class="chk"></span><span class="ck">${on?'✓':''}</span><span class="meta"><span class="sz">${esc(i.size)}</span><b>${ce(i.cat)} ${esc(i.cat)}</b><br><small>${s[1]} ${s[2]}${i.brand?' · '+esc(i.brand):''}</small></span></button>`}).join('')||'<div class="empty">目前沒有可以賣的衣服</div>'}</div></section>
+    <div class="bar"><span style="white-space:nowrap">已選 <b>${sell.sel.size}</b> 件</span><button class="btn wide" data-act="step" data-v="2"${sell.sel.size?'':' disabled'}>下一步：填價格 →</button></div>`;
+  }
+  const list=[...sell.sel].map(byId).filter(Boolean);
+  if(sell.step==2)return `<section class="sec"><div class="h2">② 填上售價</div><p class="hint">在每件衣服旁邊的框框直接輸入，或點快捷金額。</p>
+  <div class="unify">全部統一 $<input id="uni" inputmode="numeric" placeholder="100" aria-label="統一價格"><button class="btn" data-act="uni">套用</button></div>
+  ${list.map(i=>`<div class="prow"><img src="${i.img}" alt=""><div><b>${ce(i.cat)} ${esc(i.cat)} · ${esc(i.size)}</b>${i.brand?`<small style="color:var(--mute)"> ${esc(i.brand)}</small>`:''}${i.cost?`<br><small style="color:var(--mute)">當初買 $${i.cost}</small>`:''}
+  <label class="pin"><span>$</span><input data-pid="${i.id}" inputmode="numeric" placeholder="輸入售價" value="${esc(i.price)}" aria-label="售價"></label>
+  <div class="mini">${[50,100,150,200].map(v=>chip('qp',i.id,v,'$'+v,i.price==v)).join('')}</div>
+  <div class="mini" style="margin-top:6px">${CONDS.map(c=>chip('cond',i.id,c,c,i.cond==c)).join('')}</div></div></div>`).join('')}
+  </section><div class="bar"><button class="btn ghost" data-act="step" data-v="1">← 上一步</button><button class="btn wide" data-act="step" data-v="3">下一步：產生圖片 →</button></div>`;
+  return `<section class="sec"><div class="h2">③ 選版型，產生圖片</div><p class="hint">圖片會自動排好照片、尺寸、品牌、新舊程度和價格。</p>
+  <div class="fld"><b>版型</b><div class="wrap">${[[1,'單件（IG 輪播）'],[4,'4 宮格'],[6,'6 宮格'],[9,'9 宮格']].map(([v,l])=>chip('lay','',v,l,sell.layout==v)).join('')}</div></div>
+  <div class="fld"><label for="stt">圖片標題</label><input class="txt" id="stt" data-sk="title" value="${esc(sell.title)}"></div>
+  <div class="fld"><label for="stn">底部說明</label><input class="txt" id="stn" data-sk="note" value="${esc(sell.note)}"></div>
+  <div id="prev" class="prev"><p class="hint">圖片產生中…</p></div>
+  <p class="hint" style="margin-top:10px">📱 手機上長按圖片就能存到相簿。</p></section>
+  <div class="bar"><button class="btn ghost" data-act="step" data-v="2">← 改價格</button><button class="btn ghost" data-act="dl">下載</button><button class="btn wide" data-act="done">完成 ✓</button></div>`;
+}
+function bars(arr){const mx=Math.max(1,...arr.map(a=>a[1]));return arr.map(([l,n])=>`<div class="hb"><span>${l}</span><span><i style="width:${n/mx*100}%"></i></span><span>${n}</span></div>`).join('')}
+function stats(){
+  const cost=items.reduce((a,i)=>a+(+i.cost||0),0),back=items.filter(i=>i.status=='sold').reduce((a,i)=>a+(+i.sold||+i.price||0),0);
+  const sizes=[...new Set(items.map(i=>i.size))].sort((a,b)=>(RANK[a]||999)-(RANK[b]||999));
+  return `<section class="sec"><header class="top" style="padding-inline:0"><h1>統計</h1><p>小嘟的衣服都在這裡了</p></header>
+  <div class="stat"><div><small>衣服總數</small><b>${items.length} 件</b></div><div><small>現在穿</small><b>${items.filter(i=>i.status=='now').length} 件</b></div><div><small>買衣服共花</small><b>$${cost.toLocaleString()}</b></div><div><small>二手賣回</small><b>$${back.toLocaleString()}</b></div></div>
+  <div class="box"><div class="h3">依狀態</div>${bars(STS.map(s=>[s[1]+' '+s[2],items.filter(i=>i.status==s[0]).length]))}</div>
+  <div class="box"><div class="h3">依類別</div>${bars(CATS.map(c=>[c[1]+' '+c[0],items.filter(i=>i.cat==c[0]).length]))}</div>
+  <div class="box"><div class="h3">依尺寸</div>${bars(sizes.map(s=>[esc(s),items.filter(i=>i.size==s).length]))}</div></section>`;
+}
+function setV(){
+  return `<section class="sec"><header class="top" style="padding-inline:0"><h1>設定</h1></header>
+  <div class="box"><div class="h3">📏 小嘟現在穿幾號？</div><p class="hint">換尺寸後，衣櫥會提醒哪些衣服可能穿不下了。</p><div class="wrap">${SIZES.map(s=>chip('kid','',s,s,kid==s)).join('')}</div>
+  <button class="btn" style="margin-top:12px;width:100%" data-act="auto">依尺寸自動整理 🌱 → 👕</button><p class="hint" style="margin:6px 0 0">把尺寸已經合穿的「未來穿」移到「現在穿」。</p></div>
+  <div class="box"><div class="h3">☁️ 資料儲存</div><p class="hint" style="margin:0">目前是<b>原型模式</b>：你的修改先存在這支手機的瀏覽器裡，換手機或清除瀏覽器資料就會不見。正式版會連接 <b>Firebase</b>（存衣服資料）和 <b>Cloudinary</b>（存照片），換手機也不怕不見。</p></div>
+  <div class="box"><div class="h3">💾 備份</div><p class="hint">定期匯出一份備份檔存起來，換手機時可以匯入。</p><div class="wrap"><button class="btn" data-act="exp">匯出備份</button><label class="btn ghost" style="display:inline-flex;align-items:center;cursor:pointer">匯入備份<input type="file" accept=".json,application/json" id="imp" hidden></label></div></div>
+  <div class="box"><button class="btn ghost" style="width:100%" data-act="clear">${clr?'再按一次確認清空':'清空全部資料'}</button></div></section>`;
+}
+function render(){
+  $('#app').innerHTML=view=='home'?home():view=='sell'?sellV():view=='stats'?stats():setV();
+  renderNav();persist();
+  if(view=='sell'&&sell.step==3)gen();
+}
+
+/* 新增／編輯表單 */
+function openForm(item){
+  draft=item?{...item}:{id:0,imgs:[],img:'',cat:'上衣',size:kid,season:'四季皆可',brand:'',cost:'',status:'now',fav:false,price:'',cond:'',sold:''};
+  if(draft.size=='未填')draft.size='';draft.cus=!!draft.size&&!SIZES.includes(draft.size);draft.mode=item?'view':'edit';delArm=false;sheet();
+}
+function sheet(){
+  const d=draft;
+  if(!d){$('#sheet').innerHTML='';document.body.style.overflow='';return}
+  document.body.style.overflow='hidden';
+  if(d.mode=='batch'){$('#sheet').innerHTML=`<div class="sheet" data-act="close"><div class="panel" role="dialog" aria-label="批次設定"><div class="grab"></div><div class="h2" style="margin-top:0">批次設定 ${bsel.size} 件</div><p class="hint">只會改你有點選的項目，沒點的保持原樣。</p>
+  <div class="fld"><b>尺寸</b><div class="wrap">${SIZES.map(s=>chip('bd','size',s,s,d.size==s)).join('')}</div></div>
+  <div class="fld"><b>狀態</b><div class="wrap">${STS.map(s=>chip('bd','status',s[0],s[1]+' '+s[2],d.status==s[0])).join('')}</div></div>
+  <div class="fld"><b>季節</b><div class="wrap">${SEAS.map(s=>chip('bd','season',s[0],s[1]+' '+s[0],d.season==s[0])).join('')}</div></div>
+  <div class="fld"><b>類別</b><div class="wrap">${CATS.map(c=>chip('bd','cat',c[0],c[1]+' '+c[0],d.cat==c[0])).join('')}</div></div>
+  <div class="acts"><button class="btn ghost" data-act="close2">取消</button><button class="btn wide" data-act="bapply">套用到 ${bsel.size} 件</button></div></div></div>`;return}
+  if(d.mode=='view'){$('#sheet').innerHTML=viewHTML(d);return}
+  const isNew=!d.id,n=isNew?d.imgs.length:1,cus=d.cus;
+  const money=d.status=='sell'||d.status=='sold';
+  $('#sheet').innerHTML=`<div class="sheet" data-act="close"><div class="panel" role="dialog" aria-label="${isNew?'新增衣服':'衣服資料'}"><div class="grab"></div>
+  <div class="h2" style="margin-top:0">${isNew?'新增衣服':'✏️ 編輯衣服'}</div>
+  ${isNew?`<label class="ph"><input type="file" accept="image/*" multiple id="pf" hidden><span style="font-size:30px">📷</span><b>${n?'再加幾張':'選照片（可以一次選很多張）'}</b><small>照片會自動壓縮</small></label>${n?`<div class="thumbs">${d.imgs.map(u=>`<img src="${u}" alt="">`).join('')}</div><p class="hint" style="margin-top:6px">一次新增 ${n} 件，下面的設定會套用到全部，之後可以單件修改。</p>`:''}`
+  :`<label style="display:block;position:relative;cursor:pointer"><img class="big" src="${d.img}" alt=""><input type="file" accept="image/*" id="pf" hidden><span class="chip" style="position:absolute;right:10px;bottom:10px;display:inline-flex;align-items:center">📷 換照片</span></label>`}
+  <div class="fld"><b>類別</b><div class="wrap">${CATS.map(c=>chip('d','cat',c[0],c[1]+' '+c[0],d.cat==c[0])).join('')}</div></div>
+  <div class="fld"><b>尺寸</b><div class="wrap">${SIZES.map(s=>chip('d','size',s,s,d.size==s&&!cus)).join('')}${chip('cus','','','✏️ 自訂',cus)}</div>${cus?`<input class="txt" style="margin-top:8px" data-dk="size" placeholder="例如：頭圍48、F、120" value="${esc(d.size)}" aria-label="自訂尺寸">`:''}</div>
+  <div class="fld"><b>季節</b><div class="wrap">${SEAS.map(s=>chip('d','season',s[0],s[1]+' '+s[0],d.season==s[0])).join('')}</div></div>
+  <div class="fld"><label for="fb">品牌（選填）</label><input class="txt" id="fb" data-dk="brand" value="${esc(d.brand)}" placeholder="Uniqlo、無印良品…"></div>
+  <div class="fld"><label for="fc">購入金額（選填）</label><input class="txt" id="fc" data-dk="cost" inputmode="numeric" placeholder="記得的話再填" value="${esc(d.cost)}"></div>
+  <div class="fld"><b>狀態</b><div class="wrap">${STS.map(s=>chip('d','status',s[0],s[1]+' '+s[2],d.status==s[0])).join('')}</div></div>
+  ${money?`<div class="fld"><label for="fm">${d.status=='sold'?'實際賣出金額':'售價'}</label><input class="txt" id="fm" data-dk="${d.status=='sold'?'sold':'price'}" inputmode="numeric" value="${esc(d.status=='sold'?d.sold:d.price)}"></div>
+  <div class="fld"><b>新舊程度</b><div class="wrap">${CONDS.map(c=>chip('d','cond',c,c,d.cond==c)).join('')}</div></div>`:''}
+  <div class="acts">${isNew?'':`<button class="danger" data-act="del">${delArm?'再按一次確認刪除':'刪除'}</button>`}<button class="btn ghost" data-act="${isNew?'close2':'cancel'}">取消</button><button class="btn wide" data-act="save">${isNew?(n>1?`新增 ${n} 件`:'新增'):'儲存'}</button></div>
+  </div></div>`;
+}
+function viewHTML(d){
+  const s=st(d.status),row=(l,v)=>v?`<div><span>${l}</span><b>${v}</b></div>`:'';
+  return `<div class="sheet" data-act="close"><div class="panel" role="dialog" aria-label="衣服資料"><div class="grab"></div>
+  <div style="position:relative"><img class="big" src="${d.img}" alt="${esc(d.cat)}"><button class="vfav${d.fav?' on':''}" data-act="vfav" aria-label="最愛">${heart(d.fav)}</button></div>
+  <div class="h2">${ce(d.cat)} ${esc(d.cat)}　<span style="font-weight:400;color:var(--mute);font-size:16px">${esc(d.size)}</span></div>
+  <div class="info">${row('狀態',s[1]+' '+s[2])}${row('季節',se(d.season)+' '+esc(d.season))}${row('品牌',esc(d.brand))}${row('購入金額',d.cost?'$'+d.cost:'')}${d.status=='sell'?row('售價',d.price?'$'+d.price:'未填'):''}${d.status=='sold'?row('賣出金額',d.sold?'$'+d.sold:''):''}${row('新舊程度',(d.status=='sell'||d.status=='sold')?esc(d.cond):'')}</div>
+  <div class="acts"><button class="btn ghost wide" data-act="close2">關閉</button><button class="btn wide" data-act="edit">✏️ 編輯</button></div></div></div>`;
+}
+function save(){
+  const d=draft,size=String(d.size||'').trim();
+  if(!size){toast('請選尺寸');return}
+  const base={cat:d.cat,size,season:d.season,brand:String(d.brand||'').trim(),cost:d.cost,status:d.status,price:d.price,cond:d.cond,sold:d.sold};
+  if(!d.id){
+    if(!d.imgs.length){toast('請先選照片 📷');return}
+    d.imgs.forEach(img=>items.unshift({id:nid++,img,fav:false,...base}));
+    toast(`已新增 ${d.imgs.length} 件 ✨`);
+  }else{const it=byId(d.id);Object.assign(it,base,{img:d.img});toast('已儲存');render();openForm(it);return}
+  draft=null;sheet();render();
+}
+function compress(file){
+  return new Promise(r=>{const u=URL.createObjectURL(file),m=new Image();
+    m.onload=()=>{const k=Math.min(1,1200/Math.max(m.width,m.height)),cv=document.createElement('canvas');cv.width=Math.round(m.width*k);cv.height=Math.round(m.height*k);cv.getContext('2d').drawImage(m,0,0,cv.width,cv.height);URL.revokeObjectURL(u);r(cv.toDataURL('image/jpeg',.82))};
+    m.onerror=()=>{URL.revokeObjectURL(u);r(null)};m.src=u});
+}
+
+/* 出售圖片 */
+const loadImg=src=>new Promise(r=>{const m=new Image();m.onload=()=>r(m);m.onerror=()=>r(null);m.src=src});
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function fit(c,t,w){t=String(t);if(c.measureText(t).width<=w)return t;while(t.length&&c.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
+async function drawPage(list,per,n,total){
+  const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const c=cv.getContext('2d'),F='Huninn,sans-serif';
+  c.fillStyle='#f3ece3';c.fillRect(0,0,W,H);
+  c.textAlign='center';c.fillStyle='#4b3f36';c.font=`700 54px ${F}`;c.fillText(fit(c,sell.title,W-120),W/2,100);
+  c.font=`400 26px ${F}`;c.fillStyle='#9a8a7b';c.fillText(total>1?`${n+1} / ${total}`:'童裝二手出清',W/2,142);
+  const cols=per==1?1:per==9?3:2,rows=per==1?1:per==4?2:3,pad=44,g=22,top=176,bot=H-122;
+  const cw=(W-pad*2-g*(cols-1))/cols,ch=(bot-top-g*(rows-1))/rows,s=per==1?1.7:per==9?.78:per==6?.9:1.05,ih=Math.round(118*s);
+  for(let k=0;k<list.length;k++){
+    const i=list[k],x=pad+(k%cols)*(cw+g),y=top+Math.floor(k/cols)*(ch+g),phH=ch-ih;
+    c.save();rr(c,x,y,cw,ch,24);c.fillStyle='#fffaf4';c.fill();c.clip();
+    const m=await loadImg(i.img);
+    c.fillStyle='#fff';c.fillRect(x,y,cw,phH);
+    if(m){const r=Math.min((cw-24)/m.width,(phH-24)/m.height),w=m.width*r,h=m.height*r;c.drawImage(m,x+(cw-w)/2,y+(phH-h)/2,w,h)}
+    c.restore();
+    const ty=y+phH;
+    c.textAlign='right';c.fillStyle='#a87e5c';c.font=`700 ${Math.round((i.price?46:28)*s)}px ${F}`;
+    const pt=i.price?`$${i.price}`:'私訊詢價',pw=c.measureText(pt).width;c.fillText(pt,x+cw-18*s,ty+70*s);
+    const lw=cw-pw-50*s;
+    c.textAlign='left';c.fillStyle='#4b3f36';c.font=`700 ${Math.round(32*s)}px ${F}`;c.fillText(fit(c,`${i.size=='未填'?'':i.size+'　'}${i.cat}`,lw),x+18*s,ty+48*s);
+    c.font=`400 ${Math.round(24*s)}px ${F}`;c.fillStyle='#9a8a7b';c.fillText(fit(c,[i.brand,i.cond].filter(Boolean).join(' · ')||' ',lw),x+18*s,ty+90*s);
+  }
+  c.textAlign='center';c.fillStyle='#6f6157';c.font=`500 28px ${F}`;c.fillText(fit(c,sell.note,W-160),W/2,H-64);
+  c.fillStyle='#b8a898';c.font=`400 22px ${F}`;c.fillText('小嘟衣櫥',W/2,H-26);
+  return cv.toDataURL('image/jpeg',.9);
+}
+async function gen(){
+  const tok=++genTok,list=[...sell.sel].map(byId).filter(Boolean),per=sell.layout,pages=[];
+  for(let k=0;k<list.length;k+=per)pages.push(list.slice(k,k+per));
+  try{await document.fonts.load('40px Huninn')}catch(e){}
+  const out=[];for(let n=0;n<pages.length;n++)out.push(await drawPage(pages[n],per,n,pages.length));
+  if(tok!=genTok)return;pics=out;
+  const p=$('#prev');if(p)p.innerHTML=out.map((u,i)=>`<img src="${u}" alt="出清圖片 ${i+1}">`).join('');
+}
+function dl(){
+  if(!pics.length)return;
+  try{pics.forEach((u,i)=>{const a=document.createElement('a');a.href=u;a.download=`小嘟二手衣-${i+1}.jpg`;document.body.appendChild(a);a.click();a.remove()})}catch(e){}
+  toast('如果沒有下載，請長按圖片儲存');
+}
+function goStep(n){
+  if(n==3){const miss=[...sell.sel].filter(x=>!byId(x).price).length;if(miss)toast(`有 ${miss} 件沒填價格，會顯示「私訊詢價」`)}
+  sell.step=n;render();scrollTo(0,0);
+}
+
+/* 事件 */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const a=t.dataset.act,k=t.dataset.k,v=t.dataset.v,id=+t.dataset.id;
+  switch(a){
+    case 'nav':if(v=='add'){openForm();return}view=v;bm=false;bsel.clear();clr=false;render();scrollTo(0,0);break;
+    case 'f':f[k]=(f[k]==v&&v!='all')?'all':v;render();break;
+    case 'fav':{const i=byId(id);i.fav=!i.fav;render()}break;
+    case 'open':openForm(byId(id));break;
+    case 'd':draft[k]=v;if(k=='size')draft.cus=false;if(k=='status'&&v=='sold'&&!draft.sold)draft.sold=draft.price;sheet();break;
+    case 'cus':draft.cus=true;if(SIZES.includes(draft.size))draft.size='';sheet();setTimeout(()=>{const x=$('[data-dk=size]');if(x)x.focus()},0);break;
+    case 'close':if(e.target!==t)return;draft=null;sheet();break;
+    case 'close2':draft=null;sheet();break;
+    case 'bm':bm=!bm;bsel.clear();render();break;
+    case 'bpick':bsel.has(id)?bsel.delete(id):bsel.add(id);render();break;
+    case 'ball':if(lastList.length&&lastList.every(x=>bsel.has(x)))lastList.forEach(x=>bsel.delete(x));else lastList.forEach(x=>bsel.add(x));render();break;
+    case 'bset':draft={mode:'batch',cat:'',size:'',season:'',status:''};sheet();break;
+    case 'bd':draft[k]=draft[k]==v?'':v;sheet();break;
+    case 'bapply':{const ch=['cat','size','season','status'].filter(x=>draft[x]);if(!ch.length){toast('請先點選要改的項目');return}bsel.forEach(x=>{const i=byId(x);if(i)ch.forEach(y=>i[y]=draft[y])});toast(`已更新 ${bsel.size} 件 ✨`);bsel.clear();draft=null;sheet();render()}break;
+    case 'exp':{try{const b=new Blob([JSON.stringify({app:'xiaodu-closet',v:1,items,nid,kid})],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a'),dt=new Date();a.href=u;a.download=`小嘟衣櫥備份-${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('備份檔已下載')}catch(e){toast('這裡無法下載，請在正式網址使用')}}break;
+    case 'edit':draft.mode='edit';sheet();break;
+    case 'cancel':openForm(byId(draft.id));break;
+    case 'vfav':{const i=byId(draft.id);i.fav=!i.fav;draft.fav=i.fav;sheet();render()}break;
+    case 'save':save();break;
+    case 'del':if(!delArm){delArm=true;sheet();return}items=items.filter(i=>i.id!=draft.id);sell.sel.delete(draft.id);draft=null;sheet();render();toast('已刪除');break;
+    case 'pick1':sell.sel.has(id)?sell.sel.delete(id):sell.sel.add(id);render();break;
+    case 'quick':if(v=='none')sell.sel.clear();else items.forEach(i=>{if(SELLABLE.includes(i.status)&&(v=='sell'?i.status=='sell':small(i)))sell.sel.add(i.id)});render();break;
+    case 'step':goStep(+v);break;
+    case 'uni':{const u=num($('#uni').value);if(!u){toast('先輸入金額');return}sell.sel.forEach(x=>byId(x).price=u);render();toast('全部套用 $'+u)}break;
+    case 'qp':byId(+k).price=v;render();break;
+    case 'cond':{const i=byId(+k);i.cond=i.cond==v?'':v;render()}break;
+    case 'lay':sell.layout=+v;render();break;
+    case 'dl':dl();break;
+    case 'done':{const n=sell.sel.size;sell.sel.forEach(x=>{const i=byId(x);if(i&&i.status!='sold')i.status='sell'});sell={...sell,step:1,sel:new Set()};view='home';f={st:'sell',cat:'all',size:'all',season:'all'};render();scrollTo(0,0);toast(`${n} 件已標記為 💰準備賣`)}break;
+    case 'kid':kid=v;render();toast('小嘟目前 '+v+' 號');break;
+    case 'auto':{let n=0;items.forEach(i=>{if(i.status=='future'&&RANK[i.size]&&RANK[i.size]<=RANK[kid]){i.status='now';n++}});toast(n?`已把 ${n} 件移到 👕現在穿`:'目前沒有需要整理的衣服')}break;
+    case 'clear':if(!clr){clr=true;render();return}items=[];clr=false;sell.sel.clear();render();toast('已清空，按 ＋ 開始新增');break;
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.dk&&draft){draft[t.dataset.dk]=['cost','price','sold'].includes(t.dataset.dk)?num(t.value):t.value}
+  else if(t.dataset.pid){const i=byId(+t.dataset.pid);i.price=num(t.value);t.closest('.prow').querySelectorAll('[data-act=qp]').forEach(b=>b.classList.toggle('on',b.dataset.v==i.price))}
+  else if(t.dataset.sk){sell[t.dataset.sk]=t.value;clearTimeout(gt);gt=setTimeout(gen,400)}
+});
+document.addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.id=='pf'&&draft){const fs=[...t.files];if(!fs.length)return;toast('照片處理中…');const us=[];for(const fl of fs)us.push(await compress(fl));
+    if(!draft.id)draft.imgs.push(...us.filter(Boolean));else if(us[0])draft.img=us[0];sheet();return}
+  if(t.id=='imp'&&t.files[0]){try{const sv=JSON.parse(await t.files[0].text());if(!Array.isArray(sv.items))throw 0;items=sv.items;nid=sv.nid||items.reduce((a,i)=>Math.max(a,i.id),0)+1;kid=sv.kid||kid;render();toast(`已匯入 ${items.length} 件 ✨`)}catch(e){toast('這不是小嘟衣櫥的備份檔')}t.value='';return}
+  if(t.dataset.sel){f[t.dataset.sel]=t.value;render()}
+});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&draft){draft=null;sheet()}});
+render();
+}
+</script>
+</body></html>
