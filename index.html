@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="小嘟衣櫥">
 <title>小嘟衣櫥</title>
+<link rel="icon" type="image/png" href="favicon.png?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="manifest" href="manifest.json">
 <style>
 :root{
   --bg:#F4EFEA; --card:#FBF8F5; --ink:#3F3833; --sub:#8C8079; --faint:#B7ADA5;
@@ -157,9 +160,16 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 /* export */
 .exitem{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px}
 .exitem .t{font-size:14px;font-weight:500;margin-bottom:10px}
-.exitem .pics{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
-.exitem .pics img{width:62px;height:78px;object-fit:cover;border-radius:9px;border:2px solid transparent;flex:none;opacity:.6}
-.exitem .pics img.on{border-color:var(--accent-d);opacity:1}
+.exitem .pics{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px}
+.expic{position:relative;flex:none;width:64px;height:80px;border-radius:10px;overflow:hidden;border:2px solid transparent;background:var(--accent-l)}
+.expic img{width:100%;height:100%;object-fit:cover;opacity:.55}
+.expic.on{border-color:var(--accent-d)}
+.expic.on img{opacity:1}
+.expic b{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--accent-d);color:#fff;font-size:11px;display:grid;place-items:center}
+.expic i{position:absolute;left:4px;bottom:4px;font-style:normal;font-size:10px;background:rgba(251,248,245,.92);padding:1px 5px;border-radius:5px}
+.expic.add{border:1.5px dashed var(--faint);background:none;color:var(--sub);font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.saveback{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);margin-top:10px}
+.saveback input{width:18px;height:18px;accent-color:var(--accent-d)}
 .exitem .money{margin-top:10px}
 .results{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .results img{width:100%;border-radius:10px;display:block;box-shadow:0 1px 4px rgba(63,56,51,.1)}
@@ -246,6 +256,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 <div class="toast" id="toast"></div>
 <div class="busy hidden" id="busy"><div><span class="spin"></span><span id="busyText">處理中…</span></div></div>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
+<input type="file" id="exFileIn" accept="image/*" multiple hidden>
 
 <script>
 /* ================= 基本設定 ================= */
@@ -631,31 +642,58 @@ async function doDelete() {
 }
 
 /* ================= 拍賣卡 ================= */
-let ex = [];
+let ex = [], exTarget = -1;
+const EX_MAX = 4;
 function openExport() {
-  ex = items.filter(i => picked.has(i.id)).map(it => ({ it, photo: 0, price: it.askPrice ?? '' }));
+  ex = items.filter(i => picked.has(i.id)).map(it => ({
+    it, pics: it.photos.map(url => ({ url })), sel: [0], price: it.askPrice ?? '', saveBack: true,
+  }));
   renderExportSetup(); openPanel('pExport');
 }
+const picSrc = (p, t) => p.preview || img(p.url, t);
 function renderExportSetup() {
   $('#exportBody').innerHTML = `
-    <p class="hint" style="margin:0 2px 14px">每件衣服會做成一張直式圖片（1080×1350，適合 IG／FB）。可以選要用哪張照片、調整這次的售價，這裡改的售價不會寫回 Notion。</p>
-    ${ex.map((e, i) => `<div class="exitem" data-i="${i}">
+    <p class="hint" style="margin:0 2px 14px">每件衣服會做成一張直式圖片（1080×1350，適合 IG／FB）。<br>點照片可以多選（最多 ${EX_MAX} 張，例如正面＋背面），數字是排列順序，1 號會放最大。也可以現場拍新照片。這裡改的售價不會寫回 Notion。</p>
+    ${ex.map((e, i) => {
+      const newCount = e.pics.filter(p => p.file).length;
+      return `<div class="exitem" data-i="${i}">
       <div class="t">${esc(title(e.it))} <span style="color:var(--sub);font-weight:400">· ${esc(e.it.size)}${e.it.condition ? ' · ' + esc(e.it.condition) : ''}</span></div>
-      <div class="pics">${e.it.photos.map((p, j) => `<img class="${j===e.photo?'on':''}" data-j="${j}" src="${esc(img(p, 'w_200,c_limit,q_auto,f_auto'))}" alt="">`).join('')}</div>
-      <div class="money"><span>NT$</span><input class="inp" type="number" inputmode="numeric" placeholder="售價（選填）" value="${e.price}"></div>
-    </div>`).join('')}
+      <div class="pics">${e.pics.map((p, j) => {
+        const n = e.sel.indexOf(j);
+        return `<div class="expic ${n >= 0 ? 'on' : ''}" data-j="${j}"><img src="${esc(picSrc(p, 'w_200,c_limit,q_auto,f_auto'))}" alt="">${n >= 0 ? `<b>${n + 1}</b>` : ''}${p.file ? '<i>新</i>' : ''}</div>`;
+      }).join('')}
+        <button class="expic add" data-add><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>加照片</button>
+      </div>
+      ${newCount ? `<label class="saveback"><input type="checkbox" ${e.saveBack ? 'checked' : ''}> 把 ${newCount} 張新照片也存進這件衣服</label>` : ''}
+      <div class="money"><span>NT$</span><input class="inp price" type="number" inputmode="numeric" placeholder="售價（選填）" value="${e.price}"></div>
+    </div>`;
+    }).join('')}
     <div class="f" style="margin-top:20px"><label>卡片底部文字（選填，會記住）</label>
       <input class="inp" id="exFooter" placeholder="例如：台北可面交｜賣貨便寄送" value="${esc(cfg.footer)}"></div>`;
   $('#exportBody').querySelectorAll('.exitem').forEach(box => {
-    const e = ex[+box.dataset.i];
-    box.querySelectorAll('img').forEach(im => im.onclick = () => {
-      e.photo = +im.dataset.j; box.querySelectorAll('img').forEach(x => x.classList.toggle('on', x === im));
+    const i = +box.dataset.i, e = ex[i];
+    box.querySelectorAll('.expic[data-j]').forEach(el => el.onclick = () => {
+      const j = +el.dataset.j, k = e.sel.indexOf(j);
+      if (k >= 0) { if (e.sel.length === 1) return toast('至少要選一張照片'); e.sel.splice(k, 1); }
+      else { if (e.sel.length >= EX_MAX) return toast(`一張卡片最多 ${EX_MAX} 張照片`); e.sel.push(j); }
+      keepFooter(); renderExportSetup();
     });
-    box.querySelector('input').oninput = ev => e.price = ev.target.value;
+    box.querySelector('[data-add]').onclick = () => { exTarget = i; $('#exFileIn').click(); };
+    const sb = box.querySelector('.saveback input'); if (sb) sb.onchange = ev => e.saveBack = ev.target.checked;
+    box.querySelector('.price').oninput = ev => e.price = ev.target.value;
   });
   $('#exportBar').innerHTML = `<button class="btn pri" id="exGo">產生 ${ex.length} 張圖片</button>`;
   $('#exGo').onclick = makeCards;
 }
+function keepFooter() { const f = $('#exFooter'); if (f) { cfg.footer = f.value.trim(); save('xdc2-cfg', cfg); } }
+$('#exFileIn').onchange = ev => {
+  const e = ex[exTarget]; if (!e) return;
+  [...ev.target.files].forEach(f => {
+    e.pics.push({ file: f, preview: URL.createObjectURL(f) });
+    if (e.sel.length < EX_MAX) e.sel.push(e.pics.length - 1);
+  });
+  ev.target.value = ''; keepFooter(); renderExportSetup();
+};
 
 function loadImg(src) {
   return new Promise((res, rej) => {
@@ -690,14 +728,22 @@ async function drawCard(e) {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#F4EFEA'; ctx.fillRect(0, 0, W, H);
 
-  // 照片（裁成填滿）
-  const im = await loadImg(img(e.it.photos[e.photo], 'w_1400,c_limit,q_auto:good,f_jpg'));
-  const px = 48, py = 48, pw = W - 96, ph = 900;
-  const s = Math.max(pw / im.naturalWidth, ph / im.naturalHeight);
-  const sw = pw / s, sh = ph / s;
-  ctx.save(); rr(ctx, px, py, pw, ph, 28); ctx.clip();
-  ctx.drawImage(im, (im.naturalWidth - sw) / 2, (im.naturalHeight - sh) / 2, sw, sh, px, py, pw, ph);
-  ctx.restore();
+  // 照片：1 張填滿；2 張左右；3 張左大右二；4 張田字
+  const px = 48, py = 48, pw = W - 96, ph = 900, g = 12;
+  const n = e.sel.length, hw = (pw - g) / 2, hh = (ph - g) / 2, bw = Math.round(pw * 0.6), sw2 = pw - bw - g;
+  const cells = n === 1 ? [[px, py, pw, ph]]
+    : n === 2 ? [[px, py, hw, ph], [px + hw + g, py, hw, ph]]
+    : n === 3 ? [[px, py, bw, ph], [px + bw + g, py, sw2, hh], [px + bw + g, py + hh + g, sw2, hh]]
+    : [[px, py, hw, hh], [px + hw + g, py, hw, hh], [px, py + hh + g, hw, hh], [px + hw + g, py + hh + g, hw, hh]];
+  const ims = await Promise.all(e.sel.map(j => loadImg(picSrc(e.pics[j], 'w_1400,c_limit,q_auto:good,f_jpg'))));
+  ims.forEach((im, k) => {
+    const [x, y0, w, h] = cells[k];
+    const s = Math.max(w / im.naturalWidth, h / im.naturalHeight), cw = w / s, ch = h / s;
+    ctx.save(); rr(ctx, x, y0, w, h, n === 1 ? 28 : 22); ctx.clip();
+    ctx.fillStyle = '#fff'; ctx.fillRect(x, y0, w, h);
+    ctx.drawImage(im, (im.naturalWidth - cw) / 2, (im.naturalHeight - ch) / 2, cw, ch, x, y0, w, h);
+    ctx.restore();
+  });
 
   const L = 64, R = W - 64;
   let y = 1030;
@@ -734,8 +780,34 @@ async function drawCard(e) {
   }
   return new Promise(res => c.toBlob(b => res(b), 'image/jpeg', .92));
 }
+// 把匯出時新拍的照片存回 Notion（需要確認）
+async function saveBackPhotos() {
+  const todo = ex.filter(e => e.saveBack && e.pics.some(p => p.file));
+  if (!todo.length) return;
+  const over = todo.filter(e => e.pics.length > MAX_PHOTOS);
+  const ok = await confirmBox('把新照片存進衣服？',
+    todo.map(e => `「${title(e.it)}」新增 ${e.pics.filter(p => p.file).length} 張`).join('\n') +
+    (over.length ? `\n\n每件最多 ${MAX_PHOTOS} 張，超過的只會用在拍賣卡，不會存進去。` : '') + '\n確定後會寫入 Notion', '確定儲存');
+  if (!ok) return;
+  try {
+    for (const e of todo) {
+      const news = e.pics.filter(p => p.file);
+      for (let k = 0; k < news.length; k++) { busy(`上傳照片「${title(e.it)}」${k + 1} / ${news.length}…`); news[k].url = await uploadPhoto(news[k].file); }
+      const room = Math.max(0, MAX_PHOTOS - e.it.photos.length);
+      const add = news.slice(0, room).map(p => p.url);
+      news.forEach(p => { delete p.file; });
+      if (!add.length) continue;
+      busy('寫入 Notion…');
+      const r = await api('/items/' + e.it.id, 'PATCH', { photos: [...e.it.photos, ...add] });
+      const i = items.findIndex(x => x.id === r.item.id); if (i >= 0) items[i] = r.item;
+      e.it = r.item;
+    }
+    save('xdc2-items', items); render(); busy(false); toast('照片已存進衣服 ✓');
+  } catch (err) { busy(false); toast('照片存檔失敗：' + err.message + '（拍賣卡仍可使用）', 4500); }
+}
 async function makeCards() {
-  cfg.footer = $('#exFooter').value.trim(); save('xdc2-cfg', cfg);
+  keepFooter();
+  await saveBackPhotos();
   const files = [];
   try {
     for (let i = 0; i < ex.length; i++) {
