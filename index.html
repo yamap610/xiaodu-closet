@@ -72,6 +72,7 @@ main{padding:6px 14px calc(110px + var(--safe-b))}
 .empty{text-align:center;color:var(--sub);padding:70px 20px;font-size:14px;line-height:1.9}
 
 .fab{position:fixed;right:20px;bottom:calc(24px + var(--safe-b));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;box-shadow:0 6px 18px rgba(63,56,51,.25);z-index:15}
+.fab2{position:fixed;right:20px;bottom:calc(92px + var(--safe-b));height:40px;padding:0 14px 0 12px;border-radius:999px;background:var(--card);color:var(--ink);border:1px solid var(--line);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(63,56,51,.12);z-index:15}
 .selbar{position:fixed;left:12px;right:12px;bottom:calc(16px + var(--safe-b));background:var(--ink);color:var(--card);border-radius:16px;padding:10px 10px 10px 16px;display:flex;align-items:center;gap:10px;z-index:16;box-shadow:0 6px 18px rgba(63,56,51,.25)}
 .selbar span{flex:1;font-size:14px}
 .selbar .mini{font-size:12px;color:#CFC4BB;text-decoration:underline;text-underline-offset:3px}
@@ -199,6 +200,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 
 <main id="main"></main>
 
+<button class="fab2" id="fab2" aria-label="一次新增多件"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="13" height="13" rx="3"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>多件</button>
 <button class="fab" id="fab" aria-label="新增衣服"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 <div class="selbar hidden" id="selbar">
   <span id="selcount">已選 0 件</span>
@@ -224,6 +226,16 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
   </div>
   <div class="pbody" id="editBody"></div>
   <div class="bottombar"><button class="btn pri" id="btnSave">儲存</button></div>
+</section>
+
+<!-- 一次新增多件 -->
+<section class="panel" id="pBatch">
+  <div class="pbar">
+    <button class="txtbtn" data-back style="color:var(--sub);font-weight:400">取消</button>
+    <h2>一次新增多件</h2><span style="min-width:52px"></span>
+  </div>
+  <div class="pbody" id="batchBody"></div>
+  <div class="bottombar"><button class="btn pri" id="btnBatchSave">新增</button></div>
 </section>
 
 <!-- 拍賣卡 -->
@@ -257,6 +269,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 <div class="busy hidden" id="busy"><div><span class="spin"></span><span id="busyText">處理中…</span></div></div>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
 <input type="file" id="exFileIn" accept="image/*" multiple hidden>
+<input type="file" id="btFileIn" accept="image/*" multiple hidden>
 
 <script>
 /* ================= 基本設定 ================= */
@@ -445,6 +458,7 @@ function render() {
   });
 
   $('#fab').classList.toggle('hidden', selecting);
+  $('#fab2').classList.toggle('hidden', selecting);
   $('#selbar').classList.toggle('hidden', !selecting);
   $('#selcount').textContent = `已選 ${picked.size} 件`;
   $('#selGo').disabled = !picked.size;
@@ -511,7 +525,7 @@ $('#btnEdit').onclick = () => openEditor(items.find(i => i.id === curId));
 /* ================= 編輯頁 ================= */
 let ed = null;
 function openEditor(it) {
-  ed = it ? JSON.parse(JSON.stringify(it)) : { photos: [], status: '現在穿' };
+  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿' }, cfg.last || {});
   ed.isNew = !it;
   ed.pics = (ed.photos || []).map(url => ({ url }));
   $('#editTitle').textContent = it ? '編輯衣服' : '新增衣服';
@@ -531,22 +545,22 @@ function openEditor(it) {
     <div id="wrapSold">${field('售出金額', `<div class="money"><span>NT$</span><input class="inp" id="edSold" type="number" inputmode="numeric" placeholder="最後賣了多少" value="${ed.soldPrice ?? ''}"></div>`)}</div>
     ${field('備註', `<textarea class="inp" id="edNote" placeholder="例如：領口有小毛球、穿過兩次">${esc(ed.note)}</textarea>`)}
     ${ed.isNew ? '' : '<button class="del" id="btnDel">刪除這件衣服</button>'}`;
-  ['category','size','season','status','condition'].forEach(renderChips);
+  ['category','size','season','status','condition'].forEach(k => renderChips(k));
   renderEdPhotos(); togglePriceRows();
   if (!ed.isNew) $('#btnDel').onclick = doDelete;
   openPanel('pEdit');
 }
 const CAN_ADD = { category: true, size: true };
 const OPTIONAL = { status: true, condition: true };
-function renderChips(key) {
-  const box = $('#g-' + key);
-  box.innerHTML = `<div class="chips">${opts[key].map(v => `<button class="chip ${ed[key]===v?'on':''}" data-v="${esc(v)}">${esc(v)}</button>`).join('')}
+function renderChips(key, st = ed, pre = 'g-') {
+  const box = $('#' + pre + key);
+  box.innerHTML = `<div class="chips">${opts[key].map(v => `<button class="chip ${st[key]===v?'on':''}" data-v="${esc(v)}">${esc(v)}</button>`).join('')}
     ${CAN_ADD[key] ? '<button class="chip add" data-add>＋ 新增</button>' : ''}</div>
     <div class="addrow hidden"><input class="inp" placeholder="輸入新的選項" maxlength="20"><button>加入</button></div>`;
   box.querySelectorAll('.chip[data-v]').forEach(c => c.onclick = () => {
-    ed[key] = OPTIONAL[key] && ed[key] === c.dataset.v ? '' : c.dataset.v;
-    box.querySelectorAll('.chip[data-v]').forEach(x => x.classList.toggle('on', x.dataset.v === ed[key]));
-    if (key === 'status') togglePriceRows();
+    st[key] = OPTIONAL[key] && st[key] === c.dataset.v ? '' : c.dataset.v;
+    box.querySelectorAll('.chip[data-v]').forEach(x => x.classList.toggle('on', x.dataset.v === st[key]));
+    if (key === 'status' && st === ed) togglePriceRows();
   });
   const addBtn = box.querySelector('[data-add]');
   if (addBtn) {
@@ -556,7 +570,7 @@ function renderChips(key) {
       const v = inp.value.trim().replace(/,/g, '，');
       if (!v) return;
       if (!opts[key].includes(v)) opts[key].push(v);
-      ed[key] = v; renderChips(key);
+      st[key] = v; renderChips(key, st, pre);
     };
     row.querySelector('button').onclick = add;
     inp.onkeydown = e => { if (e.key === 'Enter') add(); };
@@ -618,6 +632,7 @@ $('#btnSave').onclick = async () => {
     }
     busy('寫入 Notion…');
     data.photos = ed.pics.map(p => p.url);
+    if (ed.isNew) rememberLast(data);
     const r = ed.isNew ? await api('/items', 'POST', data) : await api('/items/' + ed.id, 'PATCH', data);
     const i = items.findIndex(x => x.id === r.item.id);
     if (i >= 0) items[i] = r.item; else items.unshift(r.item);
@@ -640,6 +655,67 @@ async function doDelete() {
     closeTop(); setTimeout(closeTop, 350); // 關掉編輯頁和詳細頁
   } catch (e) { busy(false); toast('刪除失敗：' + e.message, 4000); }
 }
+
+/* ================= 一次新增多件 ================= */
+let bt = null;
+function rememberLast(d) {
+  cfg.last = { category: d.category, size: d.size, season: d.season }; save('xdc2-cfg', cfg);
+}
+function openBatch() {
+  bt = Object.assign({ pics: [], status: '待整理' }, cfg.last || {});
+  $('#batchBody').innerHTML = `
+    <p class="hint" style="margin:0 2px 16px">一張照片 = 一件衣服。選好這一批共同的類別、尺寸、季節，就會一次全部建好。名稱、品牌、價格之後有空再慢慢補。</p>
+    <div class="f"><label>照片<em>*</em></label><div class="photos" id="btPhotos"></div></div>
+    <div class="f"><label>類別<em>*</em></label><div id="b-category"></div></div>
+    <div class="f"><label>尺寸<em>*</em></label><div id="b-size"></div></div>
+    <div class="f"><label>季節<em>*</em></label><div id="b-season"></div></div>
+    <div class="f"><label>去向</label><div id="b-status"></div></div>
+    <p class="hint">💡 類別不一樣的衣服，可以分幾批新增；或先全部選「其他」，之後再一件件改。</p>`;
+  ['category','size','season','status'].forEach(k => renderChips(k, bt, 'b-'));
+  renderBtPhotos(); updateBtBtn();
+  openPanel('pBatch');
+}
+function renderBtPhotos() {
+  $('#btPhotos').innerHTML = bt.pics.map((p, i) => `
+    <div class="pt"><img src="${esc(p.preview)}" alt=""><span class="mk">${i + 1}</span>
+      <button class="x" data-x="${i}" aria-label="移除"><svg width="12" height="12" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`).join('') +
+    `<button class="pt addp" id="btAdd"><span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="margin:0 auto 4px"><path d="M12 6v12M6 12h12"/></svg>選照片<br>（可一次多張）</span></button>`;
+  $('#btPhotos').querySelectorAll('[data-x]').forEach(b => b.onclick = () => { bt.pics.splice(+b.dataset.x, 1); renderBtPhotos(); updateBtBtn(); });
+  $('#btAdd').onclick = () => $('#btFileIn').click();
+}
+function updateBtBtn() { $('#btnBatchSave').textContent = bt.pics.length ? `新增 ${bt.pics.length} 件` : '新增'; }
+$('#btFileIn').onchange = e => {
+  [...e.target.files].forEach(f => bt.pics.push({ file: f, preview: URL.createObjectURL(f) }));
+  e.target.value = ''; renderBtPhotos(); updateBtBtn();
+};
+$('#btnBatchSave').onclick = async () => {
+  const miss = [];
+  if (!bt.pics.length) miss.push('照片');
+  if (!bt.category) miss.push('類別');
+  if (!bt.size) miss.push('尺寸');
+  if (!bt.season) miss.push('季節');
+  if (miss.length) return toast('還沒選：' + miss.join('、'));
+  const n = bt.pics.length;
+  const ok = await confirmBox(`一次新增 ${n} 件？`, `${[bt.category, bt.size, bt.season, bt.status].filter(Boolean).join(' · ')}\n確定後會寫入 Notion`, '確定新增');
+  if (!ok) return;
+  rememberLast(bt);
+  let done = 0;
+  try {
+    while (bt.pics.length) {
+      const p = bt.pics[0];
+      busy(`新增中 ${done + 1} / ${n}…`);
+      if (!p.url) p.url = await uploadPhoto(p.file);
+      const r = await api('/items', 'POST', { photos: [p.url], category: bt.category, size: bt.size, season: bt.season, status: bt.status || '' });
+      items.unshift(r.item); bt.pics.shift(); done++;
+    }
+    save('xdc2-items', items); busy(false); render();
+    toast(`已新增 ${done} 件 ✓`); closeTop(); refresh(true);
+  } catch (e) {
+    save('xdc2-items', items); busy(false); render(); renderBtPhotos(); updateBtBtn();
+    toast(`已新增 ${done} 件，剩下 ${bt.pics.length} 件失敗：${e.message}。可以再按一次新增。`, 5000);
+  }
+};
+$('#fab2').onclick = openBatch;
 
 /* ================= 拍賣卡 ================= */
 let ex = [], exTarget = -1;
