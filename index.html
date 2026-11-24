@@ -528,7 +528,7 @@ function renderDetail() {
   const rows = [
     ['類別', it.category], ['尺寸', it.size], ['季節', it.season], ['品牌', it.brand],
     ['去向', it.status ? `${dot(it.status)} ${esc(it.status)}` : '', true],
-    ['品相', it.condition], ['購買價格', money(it.price)], ['購買日期', (it.buyDate || '').replace(/-/g, '/')],
+    ['品相', it.condition], ['購買價格', money(it.price)], ['購買月份', it.buyDate ? `${it.buyDate.slice(0, 4)} 年 ${+it.buyDate.slice(5, 7)} 月` : ''],
     it.status === '待出售' ? ['預計售價', money(it.askPrice)] : null,
     it.status === '已售出' ? ['售出金額', money(it.soldPrice)] : null,
     ['備註', it.note],
@@ -553,7 +553,7 @@ $('#btnSaleCard').onclick = () => openExport([curId]);
 /* ================= 編輯頁 ================= */
 let ed = null;
 function openEditor(it) {
-  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿', buyDate: new Date().toLocaleDateString('sv-SE') }, cfg.last || {});
+  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿', buyDate: new Date().toLocaleDateString('sv-SE').slice(0, 7) }, cfg.last || {});
   ed.isNew = !it;
   ed.pics = (ed.photos || []).map(url => ({ url }));
   $('#editTitle').textContent = it ? '編輯衣服' : '新增衣服';
@@ -567,7 +567,7 @@ function openEditor(it) {
     ${field('季節', `<div id="g-season"></div>`, true)}
     ${field('品牌', `<input class="inp" id="edBrand" list="brandList" placeholder="選填" value="${esc(ed.brand)}"><datalist id="brandList">${brands.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`)}
     ${field('購買價格', `<div class="money"><span>NT$</span><input class="inp" id="edPrice" type="number" inputmode="numeric" placeholder="選填" value="${ed.price ?? ''}"></div>`)}
-    ${field('購買日期', `<input class="inp" id="edBuy" type="date" value="${esc(ed.buyDate || '')}"><div class="hint">統計每月花費會用到。舊衣服不知道日期可以留空。</div>`)}
+    ${field('購買月份', `<input class="inp" id="edBuy" type="month" placeholder="例如 2026-11" value="${esc((ed.buyDate || '').slice(0, 7))}"><div class="hint">統計每月花費會用到，只要選年月就好。不記得可以留空。</div>`)}
     ${field('去向', `<div id="g-status"></div>`)}
     ${field('品相', `<div id="g-condition"></div><div class="hint">再點一次可以取消選擇</div>`)}
     <div id="wrapAsk">${field('預計售價', `<div class="money"><span>NT$</span><input class="inp" id="edAsk" type="number" inputmode="numeric" placeholder="打算賣多少" value="${ed.askPrice ?? ''}"></div>`)}</div>
@@ -639,7 +639,7 @@ function readForm() {
     category: ed.category || '', size: ed.size || '', season: ed.season || '',
     status: ed.status || '', condition: ed.condition || '',
     price: n('#edPrice'), askPrice: n('#edAsk'), soldPrice: n('#edSold'),
-    note: $('#edNote').value.trim(), buyDate: $('#edBuy').value || '',
+    note: $('#edNote').value.trim(), buyDate: (() => { const m = $('#edBuy').value.trim().match(/^(\d{4})[-\/.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-01` : ''; })(),
   };
 }
 $('#btnSave').onclick = async () => {
@@ -776,10 +776,10 @@ function renderStats() {
     <div class="sect">這個月買的衣服</div>
     ${list.length ? `<div class="list">${list.map(it => `
       <div class="row" data-id="${it.id}"><img src="${esc(img(it.photos[0], 'w_160,c_limit,q_auto,f_auto'))}" alt="">
-        <div class="tx"><div class="nm">${esc(title(it))}</div><div class="sm">${esc(it.buyDate.slice(5).replace('-', '/'))} · ${esc([it.brand, it.size].filter(Boolean).join(' · '))}</div></div>
+        <div class="tx"><div class="nm">${esc(title(it))}</div><div class="sm">${esc([it.category, it.brand, it.size].filter(Boolean).join(' · '))}</div></div>
         <div class="rt"><span style="color:var(--ink);font-size:14px">${money(it.price) || '—'}</span></div></div>`).join('')}</div>`
       : '<div class="empty" style="padding:30px 0">這個月沒有購買紀錄</div>'}
-    <p class="hint" style="margin-top:16px">統計依照「購買日期」和「購買價格」。${noDate ? `有 ${noDate} 件有價格但沒填購買日期，沒有算進來。` : ''}</p>`;
+    <p class="hint" style="margin-top:16px">統計依照「購買月份」和「購買價格」。${noDate ? `有 ${noDate} 件有價格但沒填購買月份，沒有算進來。` : ''}</p>`;
   const go = d => { stM += d; if (stM < 1) { stM = 12; stY--; } if (stM > 12) { stM = 1; stY++; } renderStats(); };
   $('#stPrev').onclick = () => go(-1); $('#stNext').onclick = () => go(1);
   $('#statsBody').querySelectorAll('.bar').forEach(b => b.onclick = () => { stM = +b.dataset.m; renderStats(); });
