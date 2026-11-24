@@ -28,6 +28,7 @@ const P = {
   askPrice: '預計售價',
   soldPrice: '售出金額',
   note: '備註',
+  buyDate: '購買日期',
   created: '建立時間',
 };
 
@@ -70,6 +71,7 @@ const SCHEMA = {
   [P.askPrice]: { number: { format: 'number' } },
   [P.soldPrice]: { number: { format: 'number' } },
   [P.note]: { rich_text: {} },
+  [P.buyDate]: { date: {} },
   [P.created]: { created_time: {} },
 };
 
@@ -138,6 +140,7 @@ function pageToItem(page) {
     askPrice: n(P.askPrice),
     soldPrice: n(P.soldPrice),
     note: plain(p[P.note] && p[P.note].rich_text),
+    buyDate: (p[P.buyDate] && p[P.buyDate].date && p[P.buyDate].date.start) || '',
     created: (p[P.created] && p[P.created].created_time) || page.created_time,
     edited: page.last_edited_time,
   };
@@ -165,6 +168,7 @@ function itemToProps(it) {
   if (has('askPrice')) props[P.askPrice] = num(it.askPrice);
   if (has('soldPrice')) props[P.soldPrice] = num(it.soldPrice);
   if (has('note')) props[P.note] = { rich_text: text(it.note) };
+  if (has('buyDate')) props[P.buyDate] = { date: it.buyDate ? { start: String(it.buyDate).slice(0, 10) } : null };
   return props;
 }
 
@@ -250,6 +254,10 @@ export default {
       // 取得選項（包含你後來新增的尺寸、類別）
       if (parts[0] === 'schema') {
         const db = await notion(env, `/databases/${needDb()}`);
+        // 舊資料庫沒有「購買日期」欄位的話，自動補上
+        if (!db.properties[P.buyDate]) {
+          await notion(env, `/databases/${needDb()}`, 'PATCH', { properties: { [P.buyDate]: { date: {} } } });
+        }
         const out = {};
         for (const [key, name] of Object.entries(P)) {
           const prop = db.properties[name];

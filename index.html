@@ -175,6 +175,23 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 .results{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .results img{width:100%;border-radius:10px;display:block;box-shadow:0 1px 4px rgba(63,56,51,.1)}
 .results a{display:block;text-align:center;font-size:12px;color:var(--sub);margin-top:6px}
+.stnav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.stnav b{font-size:17px;font-weight:600;letter-spacing:.06em}
+.stnav .ib{font-size:26px;line-height:1;color:var(--sub)}
+.sttotal{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 16px}
+.sttotal span{font-size:13px;color:var(--sub);letter-spacing:.08em}
+.sttotal strong{font-size:32px;font-weight:600;letter-spacing:.04em;color:var(--accent-d)}
+.bars{display:flex;align-items:flex-end;gap:4px;height:120px}
+.bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}
+.bar i{display:block;width:100%;max-width:18px;background:var(--accent-l);border-radius:4px 4px 2px 2px}
+.bar.on i{background:var(--accent-d)}
+.bar span{font-size:10px;color:var(--faint)}
+.bar.on span{color:var(--ink);font-weight:600}
+.catrow{display:flex;align-items:center;gap:10px;font-size:13px;padding:6px 0}
+.catrow span{width:64px;color:var(--sub);flex:none}
+.catrow div{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
+.catrow i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.catrow b{font-weight:500;min-width:56px;text-align:right}
 .sect{font-size:13px;color:var(--sub);margin:22px 2px 10px;letter-spacing:.06em}
 .box{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .box p{margin:0 0 12px;font-size:13px;color:var(--sub);line-height:1.7}
@@ -186,6 +203,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 <header id="hdr">
   <div class="top">
     <h1>小嘟衣櫥<small id="count"></small></h1>
+    <button class="ib" id="btnStats" title="每月花費"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
     <button class="ib" id="btnSelect" title="選取製作拍賣卡"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8 12 3 3 5-6"/></svg></button>
     <button class="ib" id="btnView" title="切換瀏覽方式"></button>
     <button class="ib" id="btnSettings" title="設定"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -215,7 +233,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
     <h2>衣服資料</h2><span style="width:38px"></span>
   </div>
   <div class="pbody" id="detailBody"></div>
-  <div class="bottombar"><button class="btn pri" id="btnEdit">編輯</button></div>
+  <div class="bottombar"><button class="btn sec" id="btnSaleCard">做拍賣卡</button><button class="btn pri" id="btnEdit">編輯</button></div>
 </section>
 
 <!-- 編輯頁 -->
@@ -236,6 +254,15 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
   </div>
   <div class="pbody" id="batchBody"></div>
   <div class="bottombar"><button class="btn pri" id="btnBatchSave">新增</button></div>
+</section>
+
+<!-- 統計 -->
+<section class="panel" id="pStats">
+  <div class="pbar">
+    <button class="ib" data-back><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
+    <h2>每月花費</h2><span style="width:38px"></span>
+  </div>
+  <div class="pbody" id="statsBody"></div>
 </section>
 
 <!-- 拍賣卡 -->
@@ -468,7 +495,7 @@ $('#btnView').onclick = () => { ui.view = ui.view === 'grid' ? 'list' : 'grid'; 
 $('#q').oninput = e => { ui.q = e.target.value; render(); };
 $('#btnSelect').onclick = () => { selecting = !selecting; if (!selecting) picked.clear(); render(); };
 $('#selAllSale').onclick = () => { items.filter(i => i.status === '待出售').forEach(i => picked.add(i.id)); render(); };
-$('#selGo').onclick = openExport;
+$('#selGo').onclick = () => openExport();
 $('#fab').onclick = () => openEditor(null);
 $('#btnSettings').onclick = openSettings;
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
@@ -501,7 +528,7 @@ function renderDetail() {
   const rows = [
     ['類別', it.category], ['尺寸', it.size], ['季節', it.season], ['品牌', it.brand],
     ['去向', it.status ? `${dot(it.status)} ${esc(it.status)}` : '', true],
-    ['品相', it.condition], ['購買價格', money(it.price)],
+    ['品相', it.condition], ['購買價格', money(it.price)], ['購買日期', (it.buyDate || '').replace(/-/g, '/')],
     it.status === '待出售' ? ['預計售價', money(it.askPrice)] : null,
     it.status === '已售出' ? ['售出金額', money(it.soldPrice)] : null,
     ['備註', it.note],
@@ -521,11 +548,12 @@ function renderDetail() {
   };
 }
 $('#btnEdit').onclick = () => openEditor(items.find(i => i.id === curId));
+$('#btnSaleCard').onclick = () => openExport([curId]);
 
 /* ================= 編輯頁 ================= */
 let ed = null;
 function openEditor(it) {
-  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿' }, cfg.last || {});
+  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿', buyDate: new Date().toLocaleDateString('sv-SE') }, cfg.last || {});
   ed.isNew = !it;
   ed.pics = (ed.photos || []).map(url => ({ url }));
   $('#editTitle').textContent = it ? '編輯衣服' : '新增衣服';
@@ -539,6 +567,7 @@ function openEditor(it) {
     ${field('季節', `<div id="g-season"></div>`, true)}
     ${field('品牌', `<input class="inp" id="edBrand" list="brandList" placeholder="選填" value="${esc(ed.brand)}"><datalist id="brandList">${brands.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`)}
     ${field('購買價格', `<div class="money"><span>NT$</span><input class="inp" id="edPrice" type="number" inputmode="numeric" placeholder="選填" value="${ed.price ?? ''}"></div>`)}
+    ${field('購買日期', `<input class="inp" id="edBuy" type="date" value="${esc(ed.buyDate || '')}"><div class="hint">統計每月花費會用到。舊衣服不知道日期可以留空。</div>`)}
     ${field('去向', `<div id="g-status"></div>`)}
     ${field('品相', `<div id="g-condition"></div><div class="hint">再點一次可以取消選擇</div>`)}
     <div id="wrapAsk">${field('預計售價', `<div class="money"><span>NT$</span><input class="inp" id="edAsk" type="number" inputmode="numeric" placeholder="打算賣多少" value="${ed.askPrice ?? ''}"></div>`)}</div>
@@ -610,7 +639,7 @@ function readForm() {
     category: ed.category || '', size: ed.size || '', season: ed.season || '',
     status: ed.status || '', condition: ed.condition || '',
     price: n('#edPrice'), askPrice: n('#edAsk'), soldPrice: n('#edSold'),
-    note: $('#edNote').value.trim(),
+    note: $('#edNote').value.trim(), buyDate: $('#edBuy').value || '',
   };
 }
 $('#btnSave').onclick = async () => {
@@ -717,11 +746,53 @@ $('#btnBatchSave').onclick = async () => {
 };
 $('#fab2').onclick = openBatch;
 
+/* ================= 每月花費統計 ================= */
+let stY, stM;
+function openStats() {
+  const d = new Date(); stY = d.getFullYear(); stM = d.getMonth() + 1;
+  renderStats(); openPanel('pStats');
+}
+function renderStats() {
+  const ym = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
+  const bought = items.filter(i => i.buyDate);
+  const monthSum = m => bought.filter(i => i.buyDate.startsWith(ym(stY, m))).reduce((a, i) => a + (i.price || 0), 0);
+  const months = Array.from({ length: 12 }, (_, k) => monthSum(k + 1));
+  const yearSum = months.reduce((a, b) => a + b, 0), maxM = Math.max(...months, 1);
+  const list = bought.filter(i => i.buyDate.startsWith(ym(stY, stM))).sort((a, b) => b.buyDate.localeCompare(a.buyDate));
+  const total = list.reduce((a, i) => a + (i.price || 0), 0);
+  const byCat = {};
+  list.forEach(i => byCat[i.category || '其他'] = (byCat[i.category || '其他'] || 0) + (i.price || 0));
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const maxC = Math.max(...cats.map(c => c[1]), 1);
+  const noDate = items.filter(i => i.price && !i.buyDate).length;
+  $('#statsBody').innerHTML = `
+    <div class="stnav"><button class="ib" id="stPrev">‹</button><b>${stY} 年 ${stM} 月</b><button class="ib" id="stNext">›</button></div>
+    <div class="box sttotal"><span>這個月花了</span><strong>NT$ ${total.toLocaleString()}</strong><span>${list.length} 件</span></div>
+    <div class="sect">${stY} 年每月花費　<span style="color:var(--faint)">全年 NT$ ${yearSum.toLocaleString()}</span></div>
+    <div class="box"><div class="bars">${months.map((v, k) => `
+      <button class="bar ${k + 1 === stM ? 'on' : ''}" data-m="${k + 1}"><i style="height:${Math.max(v / maxM * 100, v ? 4 : 0)}%"></i><span>${k + 1}</span></button>`).join('')}</div></div>
+    ${cats.length ? `<div class="sect">類別</div><div class="box">${cats.map(([k, v]) => `
+      <div class="catrow"><span>${esc(k)}</span><div><i style="width:${v / maxC * 100}%"></i></div><b>${v.toLocaleString()}</b></div>`).join('')}</div>` : ''}
+    <div class="sect">這個月買的衣服</div>
+    ${list.length ? `<div class="list">${list.map(it => `
+      <div class="row" data-id="${it.id}"><img src="${esc(img(it.photos[0], 'w_160,c_limit,q_auto,f_auto'))}" alt="">
+        <div class="tx"><div class="nm">${esc(title(it))}</div><div class="sm">${esc(it.buyDate.slice(5).replace('-', '/'))} · ${esc([it.brand, it.size].filter(Boolean).join(' · '))}</div></div>
+        <div class="rt"><span style="color:var(--ink);font-size:14px">${money(it.price) || '—'}</span></div></div>`).join('')}</div>`
+      : '<div class="empty" style="padding:30px 0">這個月沒有購買紀錄</div>'}
+    <p class="hint" style="margin-top:16px">統計依照「購買日期」和「購買價格」。${noDate ? `有 ${noDate} 件有價格但沒填購買日期，沒有算進來。` : ''}</p>`;
+  const go = d => { stM += d; if (stM < 1) { stM = 12; stY--; } if (stM > 12) { stM = 1; stY++; } renderStats(); };
+  $('#stPrev').onclick = () => go(-1); $('#stNext').onclick = () => go(1);
+  $('#statsBody').querySelectorAll('.bar').forEach(b => b.onclick = () => { stM = +b.dataset.m; renderStats(); });
+  $('#statsBody').querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => openDetail(r.dataset.id));
+}
+$('#btnStats').onclick = openStats;
+
 /* ================= 拍賣卡 ================= */
 let ex = [], exTarget = -1;
 const EX_MAX = 4;
-function openExport() {
-  ex = items.filter(i => picked.has(i.id)).map(it => ({
+function openExport(ids) {
+  const pick = new Set(Array.isArray(ids) ? ids : picked);
+  ex = items.filter(i => pick.has(i.id)).map(it => ({
     it, pics: it.photos.map(url => ({ url })), sel: [0], price: it.askPrice ?? '', saveBack: true,
   }));
   renderExportSetup(); openPanel('pExport');
@@ -729,7 +800,7 @@ function openExport() {
 const picSrc = (p, t) => p.preview || img(p.url, t);
 function renderExportSetup() {
   $('#exportBody').innerHTML = `
-    <p class="hint" style="margin:0 2px 14px">每件衣服會做成一張直式圖片（1080×1350，適合 IG／FB）。<br>點照片可以多選（最多 ${EX_MAX} 張，例如正面＋背面），數字是排列順序，1 號會放最大。也可以現場拍新照片。這裡改的售價不會寫回 Notion。</p>
+    <p class="hint" style="margin:0 2px 14px">每件衣服會做成一張日系簡約的拍賣圖，照片完整不裁切，高度會依照片自動調整。<br>點照片可以多選（最多 ${EX_MAX} 張，例如正面＋背面），數字是排列順序，1 號會放最大。也可以現場拍新照片。這裡改的售價不會寫回 Notion。</p>
     ${ex.map((e, i) => {
       const newCount = e.pics.filter(p => p.file).length;
       return `<div class="exitem" data-i="${i}">
@@ -799,61 +870,67 @@ function wrapLines(ctx, s, maxW, maxLines) {
   return lines;
 }
 async function drawCard(e) {
-  const W = 1080, H = 1350, F = '-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#F4EFEA'; ctx.fillRect(0, 0, W, H);
-
-  // 照片：1 張；2 張左右；3 張左大右二；4 張田字
-  const px = 48, py = 48, pw = W - 96, ph = 900, g = 12;
-  const n = e.sel.length, hw = (pw - g) / 2, hh = (ph - g) / 2, bw = Math.round(pw * 0.6), sw2 = pw - bw - g;
-  const cells = n === 1 ? [[px, py, pw, ph]]
-    : n === 2 ? [[px, py, hw, ph], [px + hw + g, py, hw, ph]]
-    : n === 3 ? [[px, py, bw, ph], [px + bw + g, py, sw2, hh], [px + bw + g, py + hh + g, sw2, hh]]
-    : [[px, py, hw, hh], [px + hw + g, py, hw, hh], [px, py + hh + g, hw, hh], [px + hw + g, py + hh + g, hw, hh]];
+  // 日系簡約：照片依原比例排列（不裁切、不留大片空白），下方細線＋小字資訊
+  const W = 1080, M = 40, G = 10, F = '-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+  const INK = '#3F3833', SUB = '#A99D94', BG = '#F7F4EF';
   const ims = await Promise.all(e.sel.map(j => loadImg(picSrc(e.pics[j], 'w_1400,c_limit,q_auto:good,f_jpg'))));
-  ims.forEach((im, k) => {
-    const [x, y0, w, h] = cells[k];
-    // 完整顯示整張照片（不裁切），多出來的地方留白
-    const s = Math.min(w / im.naturalWidth, h / im.naturalHeight), dw = im.naturalWidth * s, dh = im.naturalHeight * s;
-    ctx.save(); rr(ctx, x, y0, w, h, n === 1 ? 28 : 22); ctx.clip();
-    ctx.fillStyle = '#FBF8F5'; ctx.fillRect(x, y0, w, h);
-    ctx.drawImage(im, x + (w - dw) / 2, y0 + (h - dh) / 2, dw, dh);
-    ctx.restore();
+  const inner = W - M * 2;
+  const rows = ims.length === 4 ? [ims.slice(0, 2), ims.slice(2)] : [ims];
+  const ar = im => im.naturalWidth / im.naturalHeight;
+  const layout = rows.map(r => (inner - G * (r.length - 1)) / r.reduce((a, im) => a + ar(im), 0));
+  let photoH = layout.reduce((a, h) => a + h, 0) + G * (rows.length - 1);
+  const scale = photoH > 1300 ? 1300 / photoH : 1;
+  photoH *= scale;
+
+  const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+  const ls = v => { if ('letterSpacing' in ctx) ctx.letterSpacing = v; };
+  const L = M + 6, R = W - M - 6;
+  ctx.font = `400 27px ${F}`;
+  const notes = e.it.note ? wrapLines(ctx, e.it.note, R - L, 2) : [];
+  const Y0 = M + photoH;
+  const H = Math.round(Y0 + 196 + (notes.length ? 18 + notes.length * 42 : 0) + (cfg.footer ? 96 : 48));
+  c.width = W; c.height = H;
+  ls('0px'); ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+
+  // 照片
+  let y = M;
+  rows.forEach((r, k) => {
+    const rh = layout[k] * scale;
+    const rowW = r.reduce((a, im) => a + rh * ar(im), 0) + G * (r.length - 1);
+    let x = (W - rowW) / 2;
+    r.forEach(im => { const w = rh * ar(im); ctx.drawImage(im, x, y, w, rh); x += w + G; });
+    y += rh + G;
   });
 
-  const L = 64, R = W - 64;
-  let y = 1030;
-  // 售價（右）
+  // 名稱＋售價
   let priceW = 0;
   if (e.price !== '' && e.price != null) {
-    ctx.font = `600 58px ${F}`; ctx.fillStyle = '#7E6A5E'; ctx.textAlign = 'right';
-    const ptxt = 'NT$ ' + Number(e.price).toLocaleString();
-    ctx.fillText(ptxt, R, y); priceW = ctx.measureText(ptxt).width + 30;
+    ctx.font = `400 38px ${F}`; ls('1px'); ctx.fillStyle = '#7E6A5E'; ctx.textAlign = 'right';
+    const pt = 'NT$ ' + Number(e.price).toLocaleString();
+    ctx.fillText(pt, R, Y0 + 80); priceW = ctx.measureText(pt).width + 40;
   }
-  // 名稱（左）
-  ctx.textAlign = 'left'; ctx.fillStyle = '#3F3833'; ctx.font = `600 50px ${F}`;
-  ctx.fillText(fitText(ctx, title(e.it), R - L - priceW), L, y);
-  // 品牌 · 尺寸
-  y += 58; ctx.font = `400 34px ${F}`; ctx.fillStyle = '#8C8079';
-  ctx.fillText(fitText(ctx, [e.it.brand, '尺寸 ' + e.it.size].filter(Boolean).join('  ·  '), R - L), L, y);
-  // 品相標籤
-  if (e.it.condition) {
-    y += 26; ctx.font = `500 28px ${F}`;
-    const tw = ctx.measureText(e.it.condition).width;
-    ctx.fillStyle = '#EAE0D7'; rr(ctx, L, y, tw + 36, 48, 24); ctx.fill();
-    ctx.fillStyle = '#7E6A5E'; ctx.textBaseline = 'middle'; ctx.fillText(e.it.condition, L + 18, y + 25); ctx.textBaseline = 'alphabetic';
-    y += 48;
-  }
+  ctx.textAlign = 'left'; ctx.fillStyle = INK; ctx.font = `500 40px ${F}`; ls('3px');
+  ctx.fillText(fitText(ctx, title(e.it), R - L - priceW), L, Y0 + 80);
+  // 細線
+  ls('0px'); ctx.fillStyle = '#DCD3C9'; ctx.fillRect(L, Y0 + 112, R - L, 1.5);
+  // 小標資訊
+  let x = L;
+  [['BRAND', e.it.brand], ['SIZE', e.it.size], ['CONDITION', e.it.condition]].filter(m => m[1]).forEach(([k, v]) => {
+    ctx.font = `500 17px ${F}`; ls('4px'); ctx.fillStyle = SUB; ctx.fillText(k, x, Y0 + 156);
+    const kw = ctx.measureText(k).width;
+    ctx.font = `400 29px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(v, x, Y0 + 196);
+    x += Math.max(kw, ctx.measureText(v).width) + 64;
+  });
   // 備註
-  if (e.it.note) {
-    ctx.font = `400 29px ${F}`; ctx.fillStyle = '#6E635C';
-    wrapLines(ctx, e.it.note, R - L, 2).forEach(line => { y += 46; ctx.fillText(line, L, y); });
-  }
+  ctx.font = `400 27px ${F}`; ls('1px'); ctx.fillStyle = '#6E635C';
+  notes.forEach((line, k) => ctx.fillText(line, L, Y0 + 196 + 18 + 42 * (k + 1) - 6));
   // 底部文字
   if (cfg.footer) {
-    ctx.font = `400 25px ${F}`; ctx.fillStyle = '#A99D94'; ctx.textAlign = 'center';
-    ctx.fillText(fitText(ctx, cfg.footer, W - 128), W / 2, H - 34);
+    ctx.font = `400 20px ${F}`; ls('4px'); ctx.fillStyle = '#B7ADA5'; ctx.textAlign = 'center';
+    const ft = fitText(ctx, cfg.footer, W - 260), fw = ctx.measureText(ft).width;
+    ctx.fillText(ft, W / 2, H - 40);
+    ls('0px'); ctx.fillStyle = '#DCD3C9';
+    ctx.fillRect(W / 2 - fw / 2 - 70, H - 47, 44, 1.5); ctx.fillRect(W / 2 + fw / 2 + 26, H - 47, 44, 1.5);
   }
   return new Promise(res => c.toBlob(b => res(b), 'image/jpeg', .92));
 }
