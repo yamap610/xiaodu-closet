@@ -371,6 +371,7 @@ async function refresh(silent) {
     const [r, sc] = await Promise.all([api('/items'), api('/schema')]);
     items = r.items; save('xdc2-items', items);
     for (const k of Object.keys(DEFAULT_OPTS)) if (sc[k] && sc[k].length) opts[k] = sc[k];
+    if (sc.brand) opts.brand = sc.brand;
     save('xdc2-opts', opts);
     lastSync = new Date();
     render();
@@ -528,7 +529,7 @@ function renderDetail() {
   const rows = [
     ['類別', it.category], ['尺寸', it.size], ['季節', it.season], ['品牌', it.brand],
     ['去向', it.status ? `${dot(it.status)} ${esc(it.status)}` : '', true],
-    ['品相', it.condition], ['購買價格', money(it.price)], ['購買月份', it.buyDate ? `${it.buyDate.slice(0, 4)} 年 ${+it.buyDate.slice(5, 7)} 月` : ''],
+    ['新舊程度', it.condition], ['購買價格', money(it.price)], ['購買月份', it.buyDate ? `${it.buyDate.slice(0, 4)} 年 ${+it.buyDate.slice(5, 7)} 月` : ''],
     it.status === '待出售' ? ['預計售價', money(it.askPrice)] : null,
     it.status === '已售出' ? ['售出金額', money(it.soldPrice)] : null,
     ['備註', it.note],
@@ -558,29 +559,32 @@ function openEditor(it) {
   ed.pics = (ed.photos || []).map(url => ({ url }));
   $('#editTitle').textContent = it ? '編輯衣服' : '新增衣服';
   const field = (label, html, req) => `<div class="f"><label>${label}${req ? '<em>*</em>' : ''}</label>${html}</div>`;
-  const brands = [...new Set(items.map(i => i.brand).filter(Boolean))];
+  // 品牌選項：Notion 裡的選項＋已經用過的品牌，常用的排前面
+  const freq = {}; items.forEach(i => { if (i.brand) freq[i.brand] = (freq[i.brand] || 0) + 1; });
+  opts.brand = [...new Set([...Object.keys(freq), ...(opts.brand || [])])].sort((a, b) => (freq[b] || 0) - (freq[a] || 0));
+  if (ed.brand && !opts.brand.includes(ed.brand)) opts.brand.unshift(ed.brand);
   $('#editBody').innerHTML = `
     ${field('照片', `<div class="photos" id="edPhotos"></div><div class="hint">第一張是主圖。點照片可以設為主圖；最多 6 張（主圖 + 5 張副圖）。</div>`, true)}
     ${field('名稱', `<input class="inp" id="edName" placeholder="例如：小碎花洋裝" value="${esc(ed.name)}">`)}
     ${field('類別', `<div id="g-category"></div>`, true)}
     ${field('尺寸', `<div id="g-size"></div>`, true)}
     ${field('季節', `<div id="g-season"></div>`, true)}
-    ${field('品牌', `<input class="inp" id="edBrand" list="brandList" placeholder="選填" value="${esc(ed.brand)}"><datalist id="brandList">${brands.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`)}
+    ${field('品牌', `<div id="g-brand"></div><div class="hint">沒有的品牌按「＋ 新增」，存檔後下次就會出現在選項裡。再點一次可以取消。</div>`)}
     ${field('購買價格', `<div class="money"><span>NT$</span><input class="inp" id="edPrice" type="number" inputmode="numeric" placeholder="選填" value="${ed.price ?? ''}"></div>`)}
     ${field('購買月份', `<input class="inp" id="edBuy" type="month" placeholder="例如 2026-11" value="${esc((ed.buyDate || '').slice(0, 7))}"><div class="hint">統計每月花費會用到，只要選年月就好。不記得可以留空。</div>`)}
     ${field('去向', `<div id="g-status"></div>`)}
-    ${field('品相', `<div id="g-condition"></div><div class="hint">再點一次可以取消選擇</div>`)}
+    ${field('新舊程度', `<div id="g-condition"></div><div class="hint">再點一次可以取消選擇</div>`)}
     <div id="wrapAsk">${field('預計售價', `<div class="money"><span>NT$</span><input class="inp" id="edAsk" type="number" inputmode="numeric" placeholder="打算賣多少" value="${ed.askPrice ?? ''}"></div>`)}</div>
     <div id="wrapSold">${field('售出金額', `<div class="money"><span>NT$</span><input class="inp" id="edSold" type="number" inputmode="numeric" placeholder="最後賣了多少" value="${ed.soldPrice ?? ''}"></div>`)}</div>
     ${field('備註', `<textarea class="inp" id="edNote" placeholder="例如：領口有小毛球、穿過兩次">${esc(ed.note)}</textarea>`)}
     ${ed.isNew ? '' : '<button class="del" id="btnDel">刪除這件衣服</button>'}`;
-  ['category','size','season','status','condition'].forEach(k => renderChips(k));
+  ['category','size','season','brand','status','condition'].forEach(k => renderChips(k));
   renderEdPhotos(); togglePriceRows();
   if (!ed.isNew) $('#btnDel').onclick = doDelete;
   openPanel('pEdit');
 }
-const CAN_ADD = { category: true, size: true };
-const OPTIONAL = { status: true, condition: true };
+const CAN_ADD = { category: true, size: true, brand: true };
+const OPTIONAL = { status: true, condition: true, brand: true };
 function renderChips(key, st = ed, pre = 'g-') {
   const box = $('#' + pre + key);
   box.innerHTML = `<div class="chips">${opts[key].map(v => `<button class="chip ${st[key]===v?'on':''}" data-v="${esc(v)}">${esc(v)}</button>`).join('')}
@@ -635,7 +639,7 @@ $('#fileIn').onchange = e => {
 function readForm() {
   const n = id => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
   return {
-    name: $('#edName').value.trim(), brand: $('#edBrand').value.trim(),
+    name: $('#edName').value.trim(), brand: ed.brand || '',
     category: ed.category || '', size: ed.size || '', season: ed.season || '',
     status: ed.status || '', condition: ed.condition || '',
     price: n('#edPrice'), askPrice: n('#edAsk'), soldPrice: n('#edSold'),

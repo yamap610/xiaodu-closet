@@ -24,7 +24,7 @@ const P = {
   season: '季節',
   price: '購買價格',
   status: '去向',
-  condition: '品相',
+  condition: '新舊程度',
   askPrice: '預計售價',
   soldPrice: '售出金額',
   note: '備註',
@@ -41,7 +41,7 @@ const SCHEMA = {
   [P.name]: { title: {} },
   [P.photos]: { files: {} },
   [P.category]: { select: opt(['洋裝', '上衣', '裙子', '褲子', '連身', '配件', '背心外套', '其他'], 'brown') },
-  [P.brand]: { rich_text: {} },
+  [P.brand]: { select: { options: [] } },
   [P.size]: { select: opt(['70', '80', '90', 'SS', 'S', 'M', 'L', '18m', '24m'], 'gray') },
   [P.season]: {
     select: {
@@ -131,7 +131,7 @@ function pageToItem(page) {
       .map((f) => (f.external ? f.external.url : f.file ? f.file.url : ''))
       .filter(Boolean),
     category: s(P.category),
-    brand: plain(p[P.brand] && p[P.brand].rich_text),
+    brand: p[P.brand] ? (p[P.brand].select ? p[P.brand].select.name : plain(p[P.brand].rich_text)) : '',
     size: s(P.size),
     season: s(P.season),
     price: n(P.price),
@@ -146,7 +146,7 @@ function pageToItem(page) {
   };
 }
 
-function itemToProps(it) {
+function itemToProps(it, brandType = 'select') {
   const props = {};
   const has = (k) => Object.prototype.hasOwnProperty.call(it, k);
   if (has('name')) props[P.name] = { title: text(it.name) };
@@ -159,7 +159,7 @@ function itemToProps(it) {
       })),
     };
   if (has('category')) props[P.category] = sel(it.category);
-  if (has('brand')) props[P.brand] = { rich_text: text(it.brand) };
+  if (has('brand')) props[P.brand] = brandType === 'select' ? sel(it.brand) : { rich_text: text(it.brand) };
   if (has('size')) props[P.size] = sel(it.size);
   if (has('season')) props[P.season] = sel(it.season);
   if (has('price')) props[P.price] = num(it.price);
@@ -207,6 +207,23 @@ async function replaceImages(env, pageId, photos) {
 
 const sameList = (a, b) => JSON.stringify(a || []) === JSON.stringify(b || []);
 
+// 自動整理資料庫欄位（舊版資料庫升級用），每 5 分鐘最多檢查一次
+const OLD_NAMES = { [P.condition]: '品相' };
+const schemaCache = {};
+async function ensureSchema(env, dbId) {
+  const c = schemaCache[dbId];
+  if (c && Date.now() - c.t < 5 * 60 * 1000) return c;
+  let db = await notion(env, `/databases/${dbId}`);
+  const patch = {};
+  for (const [now, old] of Object.entries(OLD_NAMES)) {
+    if (!db.properties[now] && db.properties[old]) patch[db.properties[old].id] = { name: now }; // 欄位改名
+  }
+  if (!db.properties[P.buyDate]) patch[P.buyDate] = { date: {} };
+  if (Object.keys(patch).length) db = await notion(env, `/databases/${dbId}`, 'PATCH', { properties: patch });
+  const brand = db.properties[P.brand];
+  return (schemaCache[dbId] = { t: Date.now(), db, brandType: brand && brand.type === 'select' ? 'select' : 'rich_text' });
+}
+
 // ---------- 主程式 ----------
 export default {
   async fetch(request, env) {
@@ -253,11 +270,8 @@ export default {
 
       // 取得選項（包含你後來新增的尺寸、類別）
       if (parts[0] === 'schema') {
-        const db = await notion(env, `/databases/${needDb()}`);
-        // 舊資料庫沒有「購買日期」欄位的話，自動補上
-        if (!db.properties[P.buyDate]) {
-          await notion(env, `/databases/${needDb()}`, 'PATCH', { properties: { [P.buyDate]: { date: {} } } });
-        }
+        delete schemaCache[needDb()];
+        const { db } = await ensureSchema(env, needDb());
         const out = {};
         for (const [key, name] of Object.entries(P)) {
           const prop = db.properties[name];
@@ -268,6 +282,7 @@ export default {
 
       if (parts[0] === 'items') {
         const id = parts[1];
+        const { brandType } = await ensureSchema(env, needDb());
 
         // 讀取全部
         if (!id && request.method === 'GET') {
@@ -291,7 +306,7 @@ export default {
           const page = await notion(env, '/pages', 'POST', {
             parent: { database_id: needDb() },
             cover: cover(body.photos),
-            properties: itemToProps(body),
+            properties: itemToProps(body, brandType),
             children: body.photos.map(imageBlock),
           });
           return json({ item: pageToItem(page) });
@@ -300,7 +315,7 @@ export default {
         // 修改
         if (id && request.method === 'PATCH') {
           validate(body, false);
-          const patch = { properties: itemToProps(body) };
+          const patch = { properties: itemToProps(body, brandType) };
           let photosChanged = false;
           if ('photos' in body) {
             const cur = pageToItem(await notion(env, `/pages/${id}`));
