@@ -899,7 +899,10 @@ async function drawCard(e) {
   ctx.font = `400 ${T_NOTE}px ${F}`; ls('1px');
   const notes = e.it.note ? wrapLines(ctx, e.it.note, R - L, 2) : [];
   const Y0 = M + photoH;
-  const yTitle = Y0 + 104, yLine = Y0 + 146, yKey = Y0 + 206, yVal = Y0 + 262;
+  const meta = [['BRAND', e.it.brand], ['SIZE', e.it.size], ['CONDITION', e.it.condition]].filter(m => m[1]);
+  // 只剩一項（例如只有尺寸）時，小標和內容排同一行，不會空出一大塊
+  const compact = meta.length < 2;
+  const yTitle = Y0 + 104, yLine = Y0 + 146, yKey = Y0 + 206, yVal = compact ? Y0 + 222 : Y0 + 262;
   const yNote = yVal + 30;
   const H = Math.round(yNote + (notes.length ? notes.length * NOTE_LH + 10 : 0) + (cfg.footer ? 128 : 56));
   c.width = W; c.height = H;
@@ -929,10 +932,14 @@ async function drawCard(e) {
   ctx.fillText(fitText(ctx, title(e.it), R - L - priceW), L, yTitle);
   // 細線
   ls('0px'); ctx.fillStyle = '#DCD3C9'; ctx.fillRect(L, yLine, R - L, 2);
-  // 小標資訊：平均分欄，左右撐滿比較平衡
-  const meta = [['BRAND', e.it.brand], ['SIZE', e.it.size], ['CONDITION', e.it.condition]].filter(m => m[1]);
-  const colW = (R - L) / Math.max(meta.length, 3);
-  meta.forEach(([k, v], i) => {
+  // 小標資訊：有幾項就平均分幾欄（少一項也不會右邊空一塊）
+  const colW = (R - L) / Math.max(meta.length, 2);
+  if (compact) meta.forEach(([k, v]) => {
+    ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); ctx.fillStyle = SUB; ctx.fillText(k, L, yVal);
+    const kw = ctx.measureText(k).width;
+    ctx.font = `400 ${T_VAL}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, R - L - kw - 24), L + kw + 24, yVal);
+  });
+  else meta.forEach(([k, v], i) => {
     const x = L + colW * i;
     ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); ctx.fillStyle = SUB; ctx.fillText(k, x, yKey);
     ctx.font = `400 ${T_VAL}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, colW - 24), x, yVal);
