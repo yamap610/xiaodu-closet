@@ -552,9 +552,12 @@ $('#btnEdit').onclick = () => openEditor(items.find(i => i.id === curId));
 $('#btnSaleCard').onclick = () => openExport([curId]);
 
 /* ================= 編輯頁 ================= */
+// 購買月份：預設當月（台灣時間），存成該月 1 號
+const thisMonth = () => new Date().toLocaleDateString('sv-SE').slice(0, 7);
+const toBuyDate = v => { const m = String(v || '').trim().match(/^(\d{4})[-\/.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-01` : ''; };
 let ed = null;
 function openEditor(it) {
-  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿', buyDate: new Date().toLocaleDateString('sv-SE').slice(0, 7) }, cfg.last || {});
+  ed = it ? JSON.parse(JSON.stringify(it)) : Object.assign({ photos: [], status: '現在穿' }, cfg.last || {}, { buyDate: thisMonth() });
   ed.isNew = !it;
   ed.pics = (ed.photos || []).map(url => ({ url }));
   $('#editTitle').textContent = it ? '編輯衣服' : '新增衣服';
@@ -643,7 +646,7 @@ function readForm() {
     category: ed.category || '', size: ed.size || '', season: ed.season || '',
     status: ed.status || '', condition: ed.condition || '',
     price: n('#edPrice'), askPrice: n('#edAsk'), soldPrice: n('#edSold'),
-    note: $('#edNote').value.trim(), buyDate: (() => { const m = $('#edBuy').value.trim().match(/^(\d{4})[-\/.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-01` : ''; })(),
+    note: $('#edNote').value.trim(), buyDate: toBuyDate($('#edBuy').value),
   };
 }
 $('#btnSave').onclick = async () => {
@@ -703,6 +706,7 @@ function openBatch() {
     <div class="f"><label>尺寸<em>*</em></label><div id="b-size"></div></div>
     <div class="f"><label>季節<em>*</em></label><div id="b-season"></div></div>
     <div class="f"><label>去向</label><div id="b-status"></div></div>
+    <div class="f"><label>購買月份</label><input class="inp" id="btBuy" type="month" value="${thisMonth()}"><div class="hint">預設是這個月，不是的話可以改，或清空。</div></div>
     <p class="hint">💡 類別不一樣的衣服，可以分幾批新增；或先全部選「其他」，之後再一件件改。</p>`;
   ['category','size','season','status'].forEach(k => renderChips(k, bt, 'b-'));
   renderBtPhotos(); updateBtBtn();
@@ -729,6 +733,7 @@ $('#btnBatchSave').onclick = async () => {
   if (!bt.season) miss.push('季節');
   if (miss.length) return toast('還沒選：' + miss.join('、'));
   const n = bt.pics.length;
+  const btBuy = toBuyDate($('#btBuy').value);
   const ok = await confirmBox(`一次新增 ${n} 件？`, `${[bt.category, bt.size, bt.season, bt.status].filter(Boolean).join(' · ')}\n確定後會寫入 Notion`, '確定新增');
   if (!ok) return;
   rememberLast(bt);
@@ -738,7 +743,7 @@ $('#btnBatchSave').onclick = async () => {
       const p = bt.pics[0];
       busy(`新增中 ${done + 1} / ${n}…`);
       if (!p.url) p.url = await uploadPhoto(p.file);
-      const r = await api('/items', 'POST', { photos: [p.url], category: bt.category, size: bt.size, season: bt.season, status: bt.status || '' });
+      const r = await api('/items', 'POST', { photos: [p.url], category: bt.category, size: bt.size, season: bt.season, status: bt.status || '', buyDate: btBuy });
       items.unshift(r.item); bt.pics.shift(); done++;
     }
     save('xdc2-items', items); busy(false); render();
@@ -888,11 +893,15 @@ async function drawCard(e) {
 
   const c = document.createElement('canvas'); const ctx = c.getContext('2d');
   const ls = v => { if ('letterSpacing' in ctx) ctx.letterSpacing = v; };
-  const L = M + 6, R = W - M - 6;
-  ctx.font = `400 27px ${F}`;
+  const L = M + 8, R = W - M - 8;
+  // 下方資訊的字級（手機上看圖會縮小約 3 倍，所以字要夠大）
+  const T_TITLE = 56, T_PRICE = 54, T_KEY = 23, T_VAL = 40, T_NOTE = 33, T_FOOT = 26, NOTE_LH = 52;
+  ctx.font = `400 ${T_NOTE}px ${F}`; ls('1px');
   const notes = e.it.note ? wrapLines(ctx, e.it.note, R - L, 2) : [];
   const Y0 = M + photoH;
-  const H = Math.round(Y0 + 196 + (notes.length ? 18 + notes.length * 42 : 0) + (cfg.footer ? 96 : 48));
+  const yTitle = Y0 + 104, yLine = Y0 + 146, yKey = Y0 + 206, yVal = Y0 + 262;
+  const yNote = yVal + 30;
+  const H = Math.round(yNote + (notes.length ? notes.length * NOTE_LH + 10 : 0) + (cfg.footer ? 128 : 56));
   c.width = W; c.height = H;
   ls('0px'); ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
 
@@ -909,32 +918,35 @@ async function drawCard(e) {
   // 名稱＋售價
   let priceW = 0;
   if (e.price !== '' && e.price != null) {
-    ctx.font = `400 38px ${F}`; ls('1px'); ctx.fillStyle = '#7E6A5E'; ctx.textAlign = 'right';
-    const pt = 'NT$ ' + Number(e.price).toLocaleString();
-    ctx.fillText(pt, R, Y0 + 80); priceW = ctx.measureText(pt).width + 40;
+    const pt = Number(e.price).toLocaleString();
+    ctx.textAlign = 'right'; ctx.fillStyle = '#7E6A5E';
+    ctx.font = `500 ${T_PRICE}px ${F}`; ls('1px'); ctx.fillText(pt, R, yTitle);
+    const nw = ctx.measureText(pt).width;
+    ctx.font = `400 ${T_KEY + 5}px ${F}`; ls('2px'); ctx.fillText('NT$', R - nw - 12, yTitle);
+    priceW = nw + 12 + ctx.measureText('NT$').width + 40;
   }
-  ctx.textAlign = 'left'; ctx.fillStyle = INK; ctx.font = `500 40px ${F}`; ls('3px');
-  ctx.fillText(fitText(ctx, title(e.it), R - L - priceW), L, Y0 + 80);
+  ctx.textAlign = 'left'; ctx.fillStyle = INK; ctx.font = `500 ${T_TITLE}px ${F}`; ls('4px');
+  ctx.fillText(fitText(ctx, title(e.it), R - L - priceW), L, yTitle);
   // 細線
-  ls('0px'); ctx.fillStyle = '#DCD3C9'; ctx.fillRect(L, Y0 + 112, R - L, 1.5);
-  // 小標資訊
-  let x = L;
-  [['BRAND', e.it.brand], ['SIZE', e.it.size], ['CONDITION', e.it.condition]].filter(m => m[1]).forEach(([k, v]) => {
-    ctx.font = `500 17px ${F}`; ls('4px'); ctx.fillStyle = SUB; ctx.fillText(k, x, Y0 + 156);
-    const kw = ctx.measureText(k).width;
-    ctx.font = `400 29px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(v, x, Y0 + 196);
-    x += Math.max(kw, ctx.measureText(v).width) + 64;
+  ls('0px'); ctx.fillStyle = '#DCD3C9'; ctx.fillRect(L, yLine, R - L, 2);
+  // 小標資訊：平均分欄，左右撐滿比較平衡
+  const meta = [['BRAND', e.it.brand], ['SIZE', e.it.size], ['CONDITION', e.it.condition]].filter(m => m[1]);
+  const colW = (R - L) / Math.max(meta.length, 3);
+  meta.forEach(([k, v], i) => {
+    const x = L + colW * i;
+    ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); ctx.fillStyle = SUB; ctx.fillText(k, x, yKey);
+    ctx.font = `400 ${T_VAL}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, colW - 24), x, yVal);
   });
   // 備註
-  ctx.font = `400 27px ${F}`; ls('1px'); ctx.fillStyle = '#6E635C';
-  notes.forEach((line, k) => ctx.fillText(line, L, Y0 + 196 + 18 + 42 * (k + 1) - 6));
+  ctx.font = `400 ${T_NOTE}px ${F}`; ls('1px'); ctx.fillStyle = '#6E635C';
+  notes.forEach((line, k) => ctx.fillText(line, L, yNote + NOTE_LH * (k + 1) - 4));
   // 底部文字
   if (cfg.footer) {
-    ctx.font = `400 20px ${F}`; ls('4px'); ctx.fillStyle = '#B7ADA5'; ctx.textAlign = 'center';
-    const ft = fitText(ctx, cfg.footer, W - 260), fw = ctx.measureText(ft).width;
-    ctx.fillText(ft, W / 2, H - 40);
+    ctx.font = `400 ${T_FOOT}px ${F}`; ls('5px'); ctx.fillStyle = '#ADA197'; ctx.textAlign = 'center';
+    const ft = fitText(ctx, cfg.footer, W - 300), fw = ctx.measureText(ft).width;
+    ctx.fillText(ft, W / 2, H - 48);
     ls('0px'); ctx.fillStyle = '#DCD3C9';
-    ctx.fillRect(W / 2 - fw / 2 - 70, H - 47, 44, 1.5); ctx.fillRect(W / 2 + fw / 2 + 26, H - 47, 44, 1.5);
+    ctx.fillRect(W / 2 - fw / 2 - 86, H - 57, 56, 2); ctx.fillRect(W / 2 + fw / 2 + 30, H - 57, 56, 2);
   }
   return new Promise(res => c.toBlob(b => res(b), 'image/jpeg', .92));
 }
