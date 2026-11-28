@@ -1119,8 +1119,34 @@ const normS = s => normB(s).replace(/[호号號]$/, '');
 const findBrand = name => name ? brands.find(b => normB(b.brand) === normB(name)) : null;
 const rng = r => r && r.hMin != null && r.hMax != null ? `${r.hMin}–${r.hMax}cm` : '';
 const sizeLabel = r => r.alt ? `${r.size}（${r.alt}）` : r.size;
+// 後來才補的預設品牌：資料庫已經建好的話，打開時自動補進 Notion（每個只補一次，刪掉後不會再跑回來）
+const CHART = 'https://yamap610.github.io/xiaodu-closet/sizecharts/';
+const sRow = (size, alt, hMin, hMax, weight, age) => ({ size, alt, hMin, hMax, weight, age });
+const PRESET_BRANDS = [
+  { key: 'melikey', brand: 'Melikey', note: '韓國童裝。3호 官方寫「80cm 以下、24 個月以下」；13호 也標 XXL。', images: [CHART + 'melikey.jpg'],
+    rows: [sRow('3호', 'XS', 70, 80, '~10kg', '24個月以下'), sRow('5호', 'S', 85, 95, '10-15kg', '3-4歲'), sRow('7호', 'M', 95, 105, '15-17kg', '4-5歲'),
+      sRow('9호', 'L', 105, 115, '17-20kg', '5-6歲'), sRow('11호', 'XL', 115, 125, '20-25kg', '6-7歲'), sRow('13호', 'JS', 125, 135, '25-30kg', '7-8歲'), sRow('15호', 'JM', 135, 140, '30-35kg', '9-10歲')] },
+  { key: 'orangemom', brand: '橘子媽媽 Orange Mom', note: '5 號官方寫「90cm 以下、12kg 以下」。喇叭褲褲長：5號46／7號50／9號55／11號60／13號65／15號69 公分（手工測量有 1-3cm 誤差）。', images: [CHART + 'orangemom.jpg'],
+    rows: [sRow('5', '', 80, 90, '~12kg', ''), sRow('7', '', 90, 100, '12-15kg', ''), sRow('9', '', 100, 110, '15-19kg', ''),
+      sRow('11', '', 110, 118, '19-23kg', ''), sRow('13', '', 118, 125, '23-27kg', ''), sRow('15', '', 125, 133, '27-32kg', '')] },
+];
+let presetRun = null;
+const addPresetBrands = () => presetRun || (presetRun = addPresetsOnce().finally(() => { presetRun = null; }));
+async function addPresetsOnce() {
+  const done = load('xdc2-presets', []);
+  let added = false;
+  for (const p of PRESET_BRANDS) {
+    if (done.includes(p.key)) continue;
+    const { key, ...data } = p;
+    if (!brands.some(b => normB(b.brand) === normB(data.brand) || normB(b.brand).includes('orangemom') && key === 'orangemom')) {
+      try { const r = await api('/sizes', 'POST', data); brands.push(r.brand); added = true; } catch { continue; }
+    }
+    done.push(key); save('xdc2-presets', done);
+  }
+  if (added) { brands.sort((a, b) => a.brand.localeCompare(b.brand)); save('xdc2-sizes', brands); }
+}
 async function loadSizes() {
-  try { const r = await api('/sizes'); brands = r.brands; sizesErr = ''; save('xdc2-sizes', brands); }
+  try { const r = await api('/sizes'); brands = r.brands; sizesErr = ''; await addPresetBrands(); save('xdc2-sizes', brands); }
   catch (e) { sizesErr = /沒有這個功能/.test(e.message) ? 'old' : e.message; }
   if ($('#pSizes').classList.contains('open')) renderSizes();
 }
