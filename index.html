@@ -196,6 +196,40 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 .box{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .box p{margin:0 0 12px;font-size:13px;color:var(--sub);line-height:1.7}
 .box .f:last-child{margin-bottom:0}
+
+/* 尺寸查詢 */
+.hbox{display:flex;align-items:center;gap:12px}
+.hbox label{font-size:14px;color:var(--sub);flex:none}
+.hbox .unit{position:relative;flex:1}
+.hbox .unit .inp{font-size:20px;font-weight:600;height:50px;padding-right:46px;letter-spacing:.04em}
+.hbox .unit span{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:14px}
+.brandcard{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;width:100%;text-align:left}
+.brandcard .bn{flex:1;min-width:0}
+.brandcard .bn b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brandcard .bn small{display:block;font-size:12px;color:var(--sub);margin-top:4px;line-height:1.5}
+.brandcard .rec{text-align:right;flex:none}
+.brandcard .rec strong{display:block;font-size:20px;font-weight:600;color:var(--accent-d);letter-spacing:.02em}
+.brandcard .rec span{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+.brandcard .rec.none strong{font-size:14px;color:var(--faint);font-weight:500}
+.warn{color:#B0896B!important}
+.stable{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border-radius:var(--radius);overflow:hidden}
+.stable th{font-size:11px;font-weight:500;color:var(--sub);letter-spacing:.08em;text-align:left;padding:12px 10px 8px;border-bottom:1px solid var(--line)}
+.stable td{padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.stable tr:last-child td{border-bottom:0}
+.stable td small{color:var(--sub);font-size:12px;margin-left:3px}
+.stable tr.hit td{background:var(--accent-l);font-weight:600}
+.stable tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent-d)}
+.chartimg{width:100%;border-radius:var(--radius);display:block;margin-bottom:10px;background:var(--card)}
+.notebox{background:var(--card);border-radius:var(--radius);padding:13px 16px;font-size:14px;line-height:1.7;white-space:pre-wrap;margin-top:12px}
+.srow{display:grid;grid-template-columns:1.1fr .9fr 1.5fr 28px;gap:6px;align-items:center;margin-bottom:6px}
+.srow .inp{height:40px;padding:0 9px;font-size:14px}
+.srow .rng{display:flex;align-items:center;gap:4px}
+.srow .rng .inp{text-align:center;padding:0 4px}
+.srow .more{grid-column:1/4;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:-2px 0 6px}
+.srow .xx{width:28px;height:28px;border-radius:50%;color:var(--faint);display:grid;place-items:center}
+.shead{display:grid;grid-template-columns:1.1fr .9fr 1.5fr 28px;gap:6px;font-size:11px;color:var(--sub);margin:0 2px 6px;letter-spacing:.06em}
+.addline{width:100%;height:40px;border:1.5px dashed var(--line);border-radius:11px;color:var(--sub);font-size:14px;margin-top:4px}
+.sizehint{display:block;font-size:12px;color:var(--sub);margin-top:3px}
 </style>
 </head>
 <body>
@@ -203,6 +237,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 <header id="hdr">
   <div class="top">
     <h1>小嘟衣櫥<small id="count"></small></h1>
+    <button class="ib" id="btnSizes" title="尺寸查詢"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="19" height="8" rx="2"/><path d="M6.5 8v3M10 8v4M13.5 8v3M17 8v4"/></svg></button>
     <button class="ib" id="btnStats" title="每月花費"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
     <button class="ib" id="btnSelect" title="選取製作拍賣卡"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8 12 3 3 5-6"/></svg></button>
     <button class="ib" id="btnView" title="切換瀏覽方式"></button>
@@ -275,6 +310,36 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
   <div class="bottombar" id="exportBar"></div>
 </section>
 
+<!-- 尺寸查詢 -->
+<section class="panel" id="pSizes">
+  <div class="pbar">
+    <button class="ib" data-back><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
+    <h2>尺寸查詢</h2><span style="width:38px"></span>
+  </div>
+  <div class="pbody" id="sizesBody"></div>
+  <div class="bottombar"><button class="btn sec" id="btnAddBrand">＋ 新增品牌尺寸表</button></div>
+</section>
+
+<!-- 品牌尺寸表 -->
+<section class="panel" id="pBrand">
+  <div class="pbar">
+    <button class="ib" data-back><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
+    <h2 id="brandTitle">品牌尺寸表</h2><span style="width:38px"></span>
+  </div>
+  <div class="pbody" id="brandBody"></div>
+  <div class="bottombar"><button class="btn pri" id="btnEditBrand">編輯</button></div>
+</section>
+
+<!-- 編輯品牌尺寸表 -->
+<section class="panel" id="pBrandEdit">
+  <div class="pbar">
+    <button class="txtbtn" data-back style="color:var(--sub);font-weight:400">取消</button>
+    <h2 id="brandEditTitle">新增品牌</h2><span style="min-width:52px"></span>
+  </div>
+  <div class="pbody" id="brandEditBody"></div>
+  <div class="bottombar"><button class="btn pri" id="btnSaveBrand">儲存</button></div>
+</section>
+
 <!-- 設定 -->
 <section class="panel" id="pSettings">
   <div class="pbar">
@@ -297,6 +362,7 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
 <input type="file" id="exFileIn" accept="image/*" multiple hidden>
 <input type="file" id="btFileIn" accept="image/*" multiple hidden>
+<input type="file" id="bdFileIn" accept="image/*" multiple hidden>
 
 <script>
 /* ================= 基本設定 ================= */
@@ -306,6 +372,7 @@ const DEFAULT_OPTS = {
   season: ['春夏','秋冬','四季'],
   status: ['未來穿','現在穿','穿不下','待整理','待出售','已售出','贈與','淘汰'],
   condition: ['全新','全新無吊牌','九成新','八成新','七成新','有小瑕疵','有污漬'],
+  fit: ['偏小','正常','偏大'],
 };
 const STATUS_COLOR = {'未來穿':'#9CA592','現在穿':'#8FA3B0','穿不下':'#B5ADA6','待整理':'#D4BC8A','待出售':'#D19C7E','已售出':'#A3897A','贈與':'#C9A0A8','淘汰':'#CFC7BF'};
 const MAX_PHOTOS = 6;
@@ -318,6 +385,7 @@ const money = n => n == null || n === '' ? '' : 'NT$ ' + Number(n).toLocaleStrin
 
 let cfg = Object.assign({ worker:'', key:'', db:'', cloud:'dxd5ijwof', preset:'ml_default', footer:'' }, load('xdc2-cfg', {}));
 let items = load('xdc2-items', []);
+let brands = load('xdc2-sizes', []), sizesErr = '';
 let opts = Object.assign({}, DEFAULT_OPTS, load('xdc2-opts', {}));
 let ui = Object.assign({ view:'grid' }, load('xdc2-ui', {}), { status:'all', cat:'all', size:'all', season:'all', q:'' });
 let selecting = false, picked = new Set();
@@ -374,6 +442,7 @@ async function refresh(silent) {
     if (sc.brand) opts.brand = sc.brand;
     save('xdc2-opts', opts);
     lastSync = new Date();
+    loadSizes();
     render();
     if (curId && $('#pDetail').classList.contains('open')) renderDetail();
   } catch (e) { if (!silent) toast('同步失敗：' + e.message, 3500); }
@@ -409,6 +478,8 @@ async function uploadPhoto(file) {
 /* ================= 頁面切換（手機返回鍵也能關） ================= */
 const stack = [];
 function openPanel(id) {
+  // 後開的頁面一定蓋在上面（例如從尺寸表、統計頁點進衣服）
+  $('#' + id).style.zIndex = 40 + stack.length;
   $('#' + id).classList.add('open'); $('#' + id).scrollTop = 0;
   stack.push(id); history.pushState({ p: id }, '');
 }
@@ -527,7 +598,8 @@ function renderDetail() {
   const it = items.find(i => i.id === curId);
   if (!it) { $('#detailBody').innerHTML = '<div class="empty">找不到這件衣服</div>'; return; }
   const rows = [
-    ['類別', it.category], ['尺寸', it.size], ['季節', it.season], ['品牌', it.brand],
+    ['類別', it.category], ['尺寸', (() => { const r = rowOfItem(it); return r && rng(r) ? `${esc(it.size)}<span class="sizehint">約 ${esc(rng(r))}（${esc(findBrand(it.brand).brand)} 尺寸表）</span>` : esc(it.size); })(), true],
+    ['季節', it.season], ['品牌', it.brand], ['版型', it.fit],
     ['去向', it.status ? `${dot(it.status)} ${esc(it.status)}` : '', true],
     ['新舊程度', it.condition], ['購買價格', money(it.price)], ['購買月份', it.buyDate ? `${it.buyDate.slice(0, 4)} 年 ${+it.buyDate.slice(5, 7)} 月` : ''],
     it.status === '待出售' ? ['預計售價', money(it.askPrice)] : null,
@@ -573,6 +645,7 @@ function openEditor(it) {
     ${field('尺寸', `<div id="g-size"></div>`, true)}
     ${field('季節', `<div id="g-season"></div>`, true)}
     ${field('品牌', `<div id="g-brand"></div><div class="hint">沒有的品牌按「＋ 新增」，存檔後下次就會出現在選項裡。再點一次可以取消。</div>`)}
+    ${field('版型', `<div id="g-fit"></div><div class="hint">穿過才知道的話可以之後再填。賣的時候拍賣卡會一起寫上。</div>`)}
     ${field('購買價格', `<div class="money"><span>NT$</span><input class="inp" id="edPrice" type="number" inputmode="numeric" placeholder="選填" value="${ed.price ?? ''}"></div>`)}
     ${field('購買月份', `<input class="inp" id="edBuy" type="month" placeholder="例如 2026-11" value="${esc((ed.buyDate || '').slice(0, 7))}"><div class="hint">統計每月花費會用到，只要選年月就好。不記得可以留空。</div>`)}
     ${field('去向', `<div id="g-status"></div>`)}
@@ -581,13 +654,13 @@ function openEditor(it) {
     <div id="wrapSold">${field('售出金額', `<div class="money"><span>NT$</span><input class="inp" id="edSold" type="number" inputmode="numeric" placeholder="最後賣了多少" value="${ed.soldPrice ?? ''}"></div>`)}</div>
     ${field('備註', `<textarea class="inp" id="edNote" placeholder="例如：領口有小毛球、穿過兩次">${esc(ed.note)}</textarea>`)}
     ${ed.isNew ? '' : '<button class="del" id="btnDel">刪除這件衣服</button>'}`;
-  ['category','size','season','brand','status','condition'].forEach(k => renderChips(k));
+  ['category','size','season','brand','fit','status','condition'].forEach(k => renderChips(k));
   renderEdPhotos(); togglePriceRows();
   if (!ed.isNew) $('#btnDel').onclick = doDelete;
   openPanel('pEdit');
 }
 const CAN_ADD = { category: true, size: true, brand: true };
-const OPTIONAL = { status: true, condition: true, brand: true };
+const OPTIONAL = { status: true, condition: true, brand: true, fit: true };
 function renderChips(key, st = ed, pre = 'g-') {
   const box = $('#' + pre + key);
   box.innerHTML = `<div class="chips">${opts[key].map(v => `<button class="chip ${st[key]===v?'on':''}" data-v="${esc(v)}">${esc(v)}</button>`).join('')}
@@ -644,7 +717,7 @@ function readForm() {
   return {
     name: $('#edName').value.trim(), brand: ed.brand || '',
     category: ed.category || '', size: ed.size || '', season: ed.season || '',
-    status: ed.status || '', condition: ed.condition || '',
+    status: ed.status || '', condition: ed.condition || '', fit: ed.fit || '',
     price: n('#edPrice'), askPrice: n('#edAsk'), soldPrice: n('#edSold'),
     note: $('#edNote').value.trim(), buyDate: toBuyDate($('#edBuy').value),
   };
@@ -824,6 +897,7 @@ function renderExportSetup() {
       <div class="money"><span>NT$</span><input class="inp price" type="number" inputmode="numeric" placeholder="售價（選填）" value="${e.price}"></div>
     </div>`;
     }).join('')}
+    ${ex.some(e => rowOfItem(e.it) && rng(rowOfItem(e.it))) ? `<label class="saveback" style="margin:4px 2px 0"><input type="checkbox" id="exHeight" ${cfg.showHeight !== false ? 'checked' : ''}> 卡片加上適合身高（從品牌尺寸表帶入）</label>` : ''}
     <div class="f" style="margin-top:20px"><label>卡片底部文字（選填，會記住）</label>
       <input class="inp" id="exFooter" placeholder="例如：台北可面交｜賣貨便寄送" value="${esc(cfg.footer)}"></div>`;
   $('#exportBody').querySelectorAll('.exitem').forEach(box => {
@@ -838,6 +912,7 @@ function renderExportSetup() {
     const sb = box.querySelector('.saveback input'); if (sb) sb.onchange = ev => e.saveBack = ev.target.checked;
     box.querySelector('.price').oninput = ev => e.price = ev.target.value;
   });
+  const hc = $('#exHeight'); if (hc) hc.onchange = ev => { cfg.showHeight = ev.target.checked; save('xdc2-cfg', cfg); };
   $('#exportBar').innerHTML = `<button class="btn pri" id="exGo">產生 ${ex.length} 張圖片</button>`;
   $('#exGo').onclick = makeCards;
 }
@@ -899,7 +974,9 @@ async function drawCard(e) {
   ctx.font = `400 ${T_NOTE}px ${F}`; ls('1px');
   const notes = e.it.note ? wrapLines(ctx, e.it.note, R - L, 2) : [];
   const Y0 = M + photoH;
-  const meta = [['BRAND', e.it.brand], ['SIZE', e.it.size], ['CONDITION', e.it.condition]].filter(m => m[1]);
+  const hr = cfg.showHeight !== false ? rng(rowOfItem(e.it)) : '';
+  const fitTxt = e.it.fit && e.it.fit !== '正常' ? e.it.fit : '';
+  const meta = [['BRAND', e.it.brand], ['SIZE', e.it.size], ['HEIGHT', hr], ['FIT', fitTxt], ['CONDITION', e.it.condition]].filter(m => m[1]);
   // 只剩一項（例如只有尺寸）時，小標和內容排同一行，不會空出一大塊
   const compact = meta.length < 2;
   const yTitle = Y0 + 104, yLine = Y0 + 146, yKey = Y0 + 206, yVal = compact ? Y0 + 222 : Y0 + 262;
@@ -939,11 +1016,24 @@ async function drawCard(e) {
     const kw = ctx.measureText(k).width;
     ctx.font = `400 ${T_VAL}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, R - L - kw - 24), L + kw + 24, yVal);
   });
-  else meta.forEach(([k, v], i) => {
-    const x = L + colW * i;
-    ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); ctx.fillStyle = SUB; ctx.fillText(k, x, yKey);
-    ctx.font = `400 ${T_VAL}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, colW - 24), x, yVal);
-  });
+  else {
+    // 先試平均分欄；放不下（品牌名太長、欄位多）就改成依內容寬度左右撐滿，必要時字縮小一點
+    const widths = fs => meta.map(([k, v]) => {
+      ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); const kw = ctx.measureText(k).width;
+      ctx.font = `400 ${fs}px ${F}`; ls('1px'); return Math.max(kw, ctx.measureText(v).width);
+    });
+    let fs = T_VAL, ws = widths(fs), xs;
+    if (ws.every(w => w <= colW - 24)) xs = meta.map((_, i) => L + colW * i);
+    else {
+      while (fs > 30 && ws.reduce((a, b) => a + b, 0) + 36 * (meta.length - 1) > R - L) { fs -= 2; ws = widths(fs); }
+      const gap = Math.max(24, (R - L - ws.reduce((a, b) => a + b, 0)) / (meta.length - 1));
+      let x = L; xs = ws.map(w => { const at = x; x += w + gap; return at; });
+    }
+    meta.forEach(([k, v], i) => {
+      ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); ctx.fillStyle = SUB; ctx.fillText(k, xs[i], yKey);
+      ctx.font = `400 ${fs}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, R - xs[i]), xs[i], yVal);
+    });
+  }
   // 備註
   ctx.font = `400 ${T_NOTE}px ${F}`; ls('1px'); ctx.fillStyle = '#6E635C';
   notes.forEach((line, k) => ctx.fillText(line, L, yNote + NOTE_LH * (k + 1) - 4));
@@ -1006,6 +1096,193 @@ async function makeCards() {
   if (canShare) $('#exShare').onclick = async () => {
     try { await navigator.share({ files }); } catch (e) { if (e.name !== 'AbortError') toast('分享失敗：' + e.message); }
   };
+}
+
+/* ================= 尺寸查詢（品牌尺寸表） ================= */
+// 品牌名稱比對：忽略大小寫、空白、符號（Daily Bebe = dailybebe）
+const normB = s => String(s || '').toLowerCase().replace(/[\s\-_.'’·・]/g, '');
+const normS = s => normB(s).replace(/[호号號]$/, '');
+const findBrand = name => name ? brands.find(b => normB(b.brand) === normB(name)) : null;
+const rng = r => r && r.hMin != null && r.hMax != null ? `${r.hMin}–${r.hMax}cm` : '';
+const sizeLabel = r => r.alt ? `${r.size}（${r.alt}）` : r.size;
+async function loadSizes() {
+  try { const r = await api('/sizes'); brands = r.brands; sizesErr = ''; save('xdc2-sizes', brands); }
+  catch (e) { sizesErr = /沒有這個功能/.test(e.message) ? 'old' : e.message; }
+  if ($('#pSizes').classList.contains('open')) renderSizes();
+}
+// 這件衣服的尺寸大約適合多高
+function rowOfItem(it) {
+  const b = findBrand(it.brand); if (!b || !it.size) return null;
+  return b.rows.find(r => normS(r.size) === normS(it.size) || (r.alt && normS(r.alt) === normS(it.size))) || null;
+}
+// 依身高建議尺寸
+function recommend(b, h) {
+  const rows = b.rows.filter(r => r.hMin != null && r.hMax != null).sort((a, c) => a.hMin - c.hMin);
+  if (!rows.length || !h) return null;
+  const hits = rows.filter(r => h >= r.hMin && h <= r.hMax);
+  if (hits.length) {
+    const r = hits[hits.length - 1], next = rows[rows.indexOf(r) + 1];
+    const near = next && h >= r.hMax - 2;
+    return { row: r, msg: near ? `快到上限，想穿久一點可以買 ${next.size}${next.alt ? '（' + next.alt + '）' : ''}` : (hits.length > 1 ? `剛好在 ${hits[0].size} 和 ${r.size} 之間，建議買大的` : ''), warn: near || hits.length > 1 };
+  }
+  if (h < rows[0].hMin) return { row: rows[0], msg: '比最小尺寸還矮，最小號可能會偏大', warn: true };
+  if (h > rows[rows.length - 1].hMax) return { row: rows[rows.length - 1], msg: '已經超過這個牌子最大的尺寸', warn: true };
+  const r = rows.find(x => x.hMin > h); // 落在兩個尺寸的空隙
+  return { row: r, msg: '', warn: false };
+}
+function openSizes() { renderSizes(); openPanel('pSizes'); loadSizes(); }
+function renderSizes() {
+  const h = Number(cfg.height) || 0;
+  const body = $('#sizesBody');
+  if (sizesErr === 'old') {
+    body.innerHTML = `<div class="box"><p style="margin:0">Cloudflare 上的 Worker 還是舊版，需要更新後才能用尺寸查詢。<br>請照 README 的步驟 3-4，把新的 worker.js 整份貼上，按 Deploy。</p></div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div class="box"><div class="hbox"><label>嘟嘟現在身高</label>
+      <div class="unit"><input class="inp" id="hIn" type="number" inputmode="decimal" placeholder="例如 92" value="${esc(cfg.height || '')}"><span>cm</span></div></div>
+      <p class="hint" style="margin-bottom:0">會記住，長高了再來改。下面會列出每個牌子該買的尺寸。</p></div>
+    <div class="sect">${brands.length} 個品牌</div>
+    <div id="brandList">${brandListHtml(h)}</div>
+    ${sizesErr ? `<p class="hint">同步失敗：${esc(sizesErr)}</p>` : ''}`;
+  $('#hIn').oninput = e => {
+    cfg.height = e.target.value.trim(); save('xdc2-cfg', cfg);
+    $('#brandList').innerHTML = brandListHtml(Number(cfg.height) || 0); bindBrandList();
+  };
+  bindBrandList();
+}
+function brandListHtml(h) {
+  if (!brands.length) return `<div class="empty" style="padding:30px 0">還沒有品牌尺寸表<br>按下方「新增品牌尺寸表」開始</div>`;
+  return brands.map(b => {
+    const rec = recommend(b, h);
+    const own = items.filter(i => normB(i.brand) === normB(b.brand)).length;
+    return `<button class="brandcard" data-b="${b.id}">
+      <span class="bn"><b>${esc(b.brand)}</b><small class="${rec && rec.warn ? 'warn' : ''}">${rec ? esc(rec.msg || rng(rec.row)) : `${b.rows.length} 個尺寸${own ? `・衣櫥裡有 ${own} 件` : ''}`}</small></span>
+      <span class="rec ${rec ? '' : 'none'}">${rec ? `<strong>${esc(rec.row.size)}</strong><span>${esc(rec.row.alt || rng(rec.row))}</span>` : `<strong>${h ? '沒有身高資料' : '›'}</strong>`}</span>
+    </button>`;
+  }).join('');
+}
+function bindBrandList() { $('#brandList').querySelectorAll('[data-b]').forEach(el => el.onclick = () => openBrand(el.dataset.b)); }
+$('#btnSizes').onclick = openSizes;
+
+let curBrand = null;
+function openBrand(id) { curBrand = id; renderBrand(); openPanel('pBrand'); }
+function renderBrand() {
+  const b = brands.find(x => x.id === curBrand);
+  if (!b) { $('#brandBody').innerHTML = '<div class="empty">找不到這個品牌</div>'; return; }
+  $('#brandTitle').textContent = b.brand;
+  const h = Number(cfg.height) || 0, rec = recommend(b, h);
+  const hasW = b.rows.some(r => r.weight), hasA = b.rows.some(r => r.age);
+  const own = items.filter(i => normB(i.brand) === normB(b.brand));
+  $('#brandBody').innerHTML = `
+    ${rec ? `<div class="box sttotal" style="padding:18px 16px"><span>身高 ${h}cm 建議</span><strong>${esc(sizeLabel(rec.row))}</strong>${rec.msg ? `<span class="${rec.warn ? 'warn' : ''}">${esc(rec.msg)}</span>` : ''}</div>` : ''}
+    <table class="stable"><tr><th>尺寸</th><th>身高</th>${hasW ? '<th>體重</th>' : ''}${hasA ? '<th>年齡</th>' : ''}</tr>
+    ${b.rows.map(r => `<tr class="${rec && rec.row === r ? 'hit' : ''}"><td>${esc(r.size)}${r.alt ? `<small>${esc(r.alt)}</small>` : ''}</td><td>${esc(rng(r) || '—')}</td>${hasW ? `<td>${esc(r.weight || '—')}</td>` : ''}${hasA ? `<td>${esc(r.age || '—')}</td>` : ''}</tr>`).join('')}</table>
+    ${b.note ? `<div class="notebox">${esc(b.note)}</div>` : ''}
+    ${b.images.length ? `<div class="sect">尺寸表圖片</div>${b.images.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img class="chartimg" src="${esc(img(u, 'w_1200,c_limit,q_auto,f_auto'))}" alt=""></a>`).join('')}` : ''}
+    ${own.length ? `<div class="sect">衣櫥裡的 ${esc(b.brand)}（${own.length} 件）</div><div class="list">${own.map(it => {
+      const r = rowOfItem(it);
+      return `<div class="row" data-id="${it.id}"><img src="${esc(img(it.photos[0], 'w_160,c_limit,q_auto,f_auto'))}" alt="">
+        <div class="tx"><div class="nm">${esc(title(it))}</div><div class="sm">${esc([it.size, rng(r), it.fit && it.fit !== '正常' ? '版型' + it.fit : ''].filter(Boolean).join(' · '))}</div></div>
+        <div class="rt">${it.status ? `<span class="st">${dot(it.status)}${esc(it.status)}</span>` : ''}</div></div>`;
+    }).join('')}</div>` : ''}
+    <a class="linkline" href="https://www.notion.so/${b.id.replace(/-/g, '')}" target="_blank" rel="noopener">在 Notion 開啟</a>`;
+  $('#brandBody').querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => openDetail(r.dataset.id));
+}
+$('#btnEditBrand').onclick = () => openBrandEditor(brands.find(x => x.id === curBrand));
+$('#btnAddBrand').onclick = () => openBrandEditor(null);
+
+let bd = null;
+function openBrandEditor(b) {
+  bd = b ? JSON.parse(JSON.stringify(b)) : { brand: '', rows: [{}, {}, {}], note: '', images: [] };
+  bd.isNew = !b;
+  bd.pics = (bd.images || []).map(url => ({ url }));
+  $('#brandEditTitle').textContent = b ? '編輯尺寸表' : '新增品牌';
+  // 衣櫥裡用過、但還沒有尺寸表的品牌，可以直接點選
+  const missing = [...new Set(items.map(i => i.brand).filter(x => x && !findBrand(x)))];
+  $('#brandEditBody').innerHTML = `
+    <div class="f"><label>品牌名稱<em>*</em></label><input class="inp" id="bdName" placeholder="例如：Daily Bebe" value="${esc(bd.brand)}">
+      ${bd.isNew && missing.length ? `<div class="chips" style="margin-top:8px">${missing.map(m => `<button class="chip" data-m="${esc(m)}">${esc(m)}</button>`).join('')}</div><div class="hint">衣櫥裡還沒有尺寸表的品牌，點一下就會填入</div>` : ''}
+      <div class="hint">要跟衣服的「品牌」寫法一樣才對得起來（大小寫、空格沒關係）。</div></div>
+    <div class="f"><label>尺寸<em>*</em></label>
+      <div class="shead"><span>尺寸</span><span>對照</span><span>身高 cm</span><span></span></div>
+      <div id="bdRows"></div>
+      <button class="addline" id="bdAddRow">＋ 加一個尺寸</button>
+      <div class="hint">「對照」可以不填，例如 7호 對照 M。體重、年齡在每列下面，可以留空。</div></div>
+    <div class="f"><label>尺寸表圖片</label><div class="photos" id="bdPhotos"></div><div class="hint">把官方尺寸表截圖放這裡，之後點開就能看原圖。</div></div>
+    <div class="f"><label>備註</label><textarea class="inp" id="bdNote" placeholder="例如：版型偏小，建議買大一號">${esc(bd.note)}</textarea></div>
+    ${bd.isNew ? '' : '<button class="del" id="bdDel">刪除這個品牌的尺寸表</button>'}`;
+  $('#brandEditBody').querySelectorAll('[data-m]').forEach(c => c.onclick = () => $('#bdName').value = c.dataset.m);
+  $('#bdAddRow').onclick = () => { grabRows(); bd.rows.push({}); renderBdRows(); };
+  if (!bd.isNew) $('#bdDel').onclick = deleteBrand;
+  renderBdRows(); renderBdPhotos();
+  openPanel('pBrandEdit');
+}
+function renderBdRows() {
+  const v = x => x == null ? '' : esc(x);
+  $('#bdRows').innerHTML = bd.rows.map((r, i) => `<div class="srow" data-i="${i}">
+    <input class="inp" data-k="size" placeholder="7호" value="${v(r.size)}">
+    <input class="inp" data-k="alt" placeholder="M" value="${v(r.alt)}">
+    <div class="rng"><input class="inp" data-k="hMin" type="number" inputmode="decimal" placeholder="95" value="${v(r.hMin)}">–<input class="inp" data-k="hMax" type="number" inputmode="decimal" placeholder="100" value="${v(r.hMax)}"></div>
+    <button class="xx" data-x="${i}" aria-label="刪除這列"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="more"><input class="inp" data-k="weight" placeholder="體重 15-17kg" value="${v(r.weight)}"><input class="inp" data-k="age" placeholder="年齡 4-5歲" value="${v(r.age)}"></div>
+  </div>`).join('');
+  $('#bdRows').querySelectorAll('[data-x]').forEach(b => b.onclick = () => { grabRows(); bd.rows.splice(+b.dataset.x, 1); renderBdRows(); });
+}
+function grabRows() {
+  bd.rows = [...$('#bdRows').querySelectorAll('.srow')].map(el => {
+    const g = k => el.querySelector(`[data-k="${k}"]`).value.trim();
+    const n = k => g(k) === '' ? null : Number(g(k));
+    return { size: g('size'), alt: g('alt'), hMin: n('hMin'), hMax: n('hMax'), weight: g('weight'), age: g('age') };
+  });
+}
+function renderBdPhotos() {
+  const box = $('#bdPhotos');
+  box.innerHTML = bd.pics.map((p, i) => `<div class="pt"><img src="${esc(p.preview || img(p.url, 'w_300,c_limit,q_auto,f_auto'))}" alt="">
+    <button class="x" data-x="${i}" aria-label="移除"><svg width="12" height="12" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`).join('') +
+    (bd.pics.length < 6 ? `<button class="pt addp" id="bdAddPic"><span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="margin:0 auto 4px"><path d="M12 6v12M6 12h12"/></svg>加圖片</span></button>` : '');
+  box.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { bd.pics.splice(+b.dataset.x, 1); renderBdPhotos(); });
+  const a = $('#bdAddPic'); if (a) a.onclick = () => $('#bdFileIn').click();
+}
+$('#bdFileIn').onchange = e => {
+  [...e.target.files].slice(0, 6 - bd.pics.length).forEach(f => bd.pics.push({ file: f, preview: URL.createObjectURL(f) }));
+  e.target.value = ''; renderBdPhotos();
+};
+$('#btnSaveBrand').onclick = async () => {
+  grabRows();
+  const data = { brand: $('#bdName').value.trim(), note: $('#bdNote').value.trim(), rows: bd.rows.filter(r => r.size) };
+  if (!data.brand) return toast('還沒填品牌名稱');
+  if (!data.rows.length) return toast('至少要填一個尺寸');
+  const bad = data.rows.find(r => (r.hMin == null) !== (r.hMax == null) || (r.hMin != null && r.hMin > r.hMax));
+  if (bad) return toast(`「${bad.size}」的身高範圍不完整或顛倒了`);
+  const dup = brands.find(b => normB(b.brand) === normB(data.brand) && b.id !== bd.id);
+  if (dup) return toast(`已經有「${dup.brand}」的尺寸表了`);
+  const ok = await confirmBox(bd.isNew ? '新增這個品牌？' : '儲存修改？', `「${data.brand}」${data.rows.length} 個尺寸\n確定後會寫入 Notion`, '確定儲存');
+  if (!ok) return;
+  try {
+    const newOnes = bd.pics.filter(p => p.file);
+    for (const p of bd.pics) if (p.file) { busy(`上傳圖片 ${newOnes.indexOf(p) + 1} / ${newOnes.length}…`); p.url = await uploadPhoto(p.file); delete p.file; }
+    data.images = bd.pics.map(p => p.url);
+    busy('寫入 Notion…');
+    const r = bd.isNew ? await api('/sizes', 'POST', data) : await api('/sizes/' + bd.id, 'PATCH', data);
+    const i = brands.findIndex(x => x.id === r.brand.id);
+    if (i >= 0) brands[i] = r.brand; else brands.push(r.brand);
+    brands.sort((a, b) => a.brand.localeCompare(b.brand)); save('xdc2-sizes', brands);
+    busy(false); toast(bd.isNew ? '已新增 ✓' : '已儲存 ✓');
+    curBrand = r.brand.id; renderSizes(); renderBrand();
+    closeTop();
+    if (bd.isNew) setTimeout(() => openPanel('pBrand'), 350);
+  } catch (e) { busy(false); toast('儲存失敗：' + e.message, 4000); }
+};
+async function deleteBrand() {
+  const ok = await confirmBox('刪除這個尺寸表？', `「${bd.brand}」\n衣服不會受影響。會移到 Notion 的垃圾桶，30 天內可以救回。`, '刪除', true);
+  if (!ok) return;
+  try {
+    busy('刪除中…'); await api('/sizes/' + bd.id, 'DELETE');
+    brands = brands.filter(b => b.id !== bd.id); save('xdc2-sizes', brands);
+    busy(false); toast('已刪除'); renderSizes();
+    closeTop(); setTimeout(closeTop, 350);
+  } catch (e) { busy(false); toast('刪除失敗：' + e.message, 4000); }
 }
 
 /* ================= 設定 ================= */

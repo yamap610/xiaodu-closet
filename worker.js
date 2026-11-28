@@ -29,8 +29,10 @@ const P = {
   soldPrice: '售出金額',
   note: '備註',
   buyDate: '購買日期',
+  fit: '版型',
   created: '建立時間',
 };
+const FIT_OPTIONS = ['偏小', '正常', '偏大'];
 
 const opt = (names, color = 'default') => ({
   options: names.map((n) => ({ name: n, color })),
@@ -72,6 +74,7 @@ const SCHEMA = {
   [P.soldPrice]: { number: { format: 'number' } },
   [P.note]: { rich_text: {} },
   [P.buyDate]: { date: {} },
+  [P.fit]: { select: opt(FIT_OPTIONS, 'blue') },
   [P.created]: { created_time: {} },
 };
 
@@ -141,6 +144,7 @@ function pageToItem(page) {
     soldPrice: n(P.soldPrice),
     note: plain(p[P.note] && p[P.note].rich_text),
     buyDate: (p[P.buyDate] && p[P.buyDate].date && p[P.buyDate].date.start) || '',
+    fit: s(P.fit),
     created: (p[P.created] && p[P.created].created_time) || page.created_time,
     edited: page.last_edited_time,
   };
@@ -169,6 +173,7 @@ function itemToProps(it, brandType = 'select') {
   if (has('soldPrice')) props[P.soldPrice] = num(it.soldPrice);
   if (has('note')) props[P.note] = { rich_text: text(it.note) };
   if (has('buyDate')) props[P.buyDate] = { date: it.buyDate ? { start: String(it.buyDate).slice(0, 10) } : null };
+  if (has('fit')) props[P.fit] = sel(it.fit);
   return props;
 }
 
@@ -219,9 +224,129 @@ async function ensureSchema(env, dbId) {
     if (!db.properties[now] && db.properties[old]) patch[db.properties[old].id] = { name: now }; // 欄位改名
   }
   if (!db.properties[P.buyDate]) patch[P.buyDate] = { date: {} };
+  if (!db.properties[P.fit]) patch[P.fit] = { select: opt(FIT_OPTIONS, 'blue') };
   if (Object.keys(patch).length) db = await notion(env, `/databases/${dbId}`, 'PATCH', { properties: patch });
   const brand = db.properties[P.brand];
   return (schemaCache[dbId] = { t: Date.now(), db, brandType: brand && brand.type === 'select' ? 'select' : 'rich_text' });
+}
+
+// ---------- 品牌尺寸表（和「小嘟衣櫥」放在同一個 Notion 頁面裡） ----------
+// 每個品牌一筆；「尺寸表」欄位一行一個尺寸，格式：尺寸｜對照｜身高｜體重｜年齡
+//   例：7호｜M｜95-100cm｜15-17kg｜4-5歲（在 Notion 裡直接改也可以）
+const SIZES_TITLE = '品牌尺寸表';
+const S = { brand: '品牌', table: '尺寸表', note: '備註', images: '尺寸表圖片' };
+const SIZES_SCHEMA = {
+  [S.brand]: { title: {} },
+  [S.table]: { rich_text: {} },
+  [S.note]: { rich_text: {} },
+  [S.images]: { files: {} },
+};
+// 第一次建立時先放進去的兩個品牌（圖片放在 GitHub Pages 上）
+const CHART = 'https://yamap610.github.io/xiaodu-closet/sizecharts/';
+const SEED = [
+  {
+    brand: 'Daily Bebe',
+    note: '韓國童裝，尺寸是「호」，括號是對應的英文尺寸。',
+    images: [CHART + 'dailybebe.jpg'],
+    rows: [
+      ['3호', 'XS', 75, 85, '8-10kg', '1歲前後'], ['5호', 'S', 85, 95, '11-13kg', '2-3歲'],
+      ['7호', 'M', 95, 100, '15-17kg', '4-5歲'], ['9호', 'L', 100, 110, '17-20kg', '5-6歲'],
+      ['11호', 'XL', 110, 120, '19-22kg', '7-8歲'], ['13호', 'JS', 120, 125, '23-27kg', '8-9歲'],
+      ['15호', 'JM', 125, 135, '27-31kg', '9-10歲'], ['17호', 'JL', 135, 140, '32-35kg', '10-11歲'],
+    ],
+  },
+  {
+    brand: 'Moran',
+    note: '套裝標準版。賣家實穿：男生 100cm/15kg 穿 L 剛好；女生 96cm/15kg 穿 L 稍鬆；76cm/10kg 穿 S（=80）。',
+    images: [CHART + 'moran.jpg'],
+    rows: [
+      ['S', '', 70, 80, '10-14kg', ''], ['M', '', 80, 90, '15-16kg', ''],
+      ['L', '', 90, 100, '17-19kg', ''], ['XL', '', 100, 110, '20-24kg', ''],
+    ],
+  },
+  {
+    brand: 'Peanuts House',
+    note: '品牌改版後尺寸做小一號（Redo one size smaller）。官方示範：90cm 的小孩穿 5호。',
+    images: [CHART + 'peanuts.jpg'],
+    rows: [
+      ['5호', '', 85, 93, '', '2-3歲'], ['7호', '', 93, 100, '', '3-4歲'], ['9호', '', 100, 107, '', '4-5歲'],
+      ['11호', '', 107, 114, '', '5-6歲'], ['13호', '', 114, 120, '', '6-7歲'], ['15호', '', 120, 128, '', '7-8歲'],
+    ],
+  },
+].map((b) => ({ ...b, rows: b.rows.map(([size, alt, hMin, hMax, weight, age]) => ({ size, alt, hMin, hMax, weight, age })) }));
+
+const rowsToText = (rows) =>
+  (rows || [])
+    .filter((r) => r && String(r.size || '').trim())
+    .map((r) => [
+      String(r.size).trim(), (r.alt || '').trim(),
+      r.hMin != null && r.hMin !== '' && r.hMax != null && r.hMax !== '' ? `${r.hMin}-${r.hMax}cm` : '',
+      (r.weight || '').trim(), (r.age || '').trim(),
+    ].map((x) => String(x).replace(/[｜|\n]/g, ' ')).join('｜'))
+    .join('\n');
+function textToRows(t) {
+  return String(t || '').split(/\n+/).map((line) => {
+    const f = line.split(/[｜|]/).map((x) => x.trim());
+    if (!f[0]) return null;
+    const h = (f[2] || '').match(/(\d+(?:\.\d+)?)\s*[-~–～—]\s*(\d+(?:\.\d+)?)/);
+    return { size: f[0], alt: f[1] || '', hMin: h ? Number(h[1]) : null, hMax: h ? Number(h[2]) : null, weight: f[3] || '', age: f[4] || '' };
+  }).filter(Boolean);
+}
+function pageToBrand(page) {
+  const p = page.properties || {};
+  return {
+    id: page.id,
+    brand: plain(p[S.brand] && p[S.brand].title),
+    rows: textToRows(plain(p[S.table] && p[S.table].rich_text)),
+    note: plain(p[S.note] && p[S.note].rich_text),
+    images: ((p[S.images] && p[S.images].files) || [])
+      .map((f) => (f.external ? f.external.url : f.file ? f.file.url : ''))
+      .filter(Boolean),
+    edited: page.last_edited_time,
+  };
+}
+function brandToProps(b) {
+  const props = {};
+  const has = (k) => Object.prototype.hasOwnProperty.call(b, k);
+  if (has('brand')) props[S.brand] = { title: text(b.brand) };
+  if (has('rows')) props[S.table] = { rich_text: text(rowsToText(b.rows)) };
+  if (has('note')) props[S.note] = { rich_text: text(b.note) };
+  if (has('images'))
+    props[S.images] = {
+      files: (b.images || []).slice(0, 6).map((url, i) => ({ name: `尺寸表${i + 1}`, type: 'external', external: { url } })),
+    };
+  return props;
+}
+async function createBrand(env, sizesDb, b) {
+  return notion(env, '/pages', 'POST', {
+    parent: { database_id: sizesDb },
+    properties: brandToProps(b),
+    children: (b.images || []).map(imageBlock),
+  });
+}
+// 找到（或第一次自動建立）品牌尺寸表
+const sizesCache = {};
+async function ensureSizesDb(env, dbId) {
+  if (sizesCache[dbId]) return sizesCache[dbId];
+  const { db } = await ensureSchema(env, dbId);
+  const parent = db.parent && db.parent.type === 'page_id' ? db.parent.page_id : null;
+  if (!parent) throw new HttpError(400, '「小嘟衣櫥」資料庫不在一般頁面裡，沒辦法自動建立品牌尺寸表');
+  let cursor;
+  do {
+    const q = cursor ? `?start_cursor=${cursor}&page_size=100` : '?page_size=100';
+    const r = await notion(env, `/blocks/${parent}/children${q}`);
+    const hit = r.results.find((b) => b.type === 'child_database' && b.child_database.title === SIZES_TITLE);
+    if (hit) return (sizesCache[dbId] = hit.id);
+    cursor = r.has_more ? r.next_cursor : null;
+  } while (cursor);
+  const created = await notion(env, '/databases', 'POST', {
+    parent: { type: 'page_id', page_id: parent },
+    title: text(SIZES_TITLE),
+    icon: { type: 'emoji', emoji: '📏' },
+    properties: SIZES_SCHEMA,
+  });
+  for (const b of SEED) await createBrand(env, created.id, b);
+  return (sizesCache[dbId] = created.id);
 }
 
 // ---------- 主程式 ----------
@@ -328,6 +453,44 @@ export default {
         }
 
         // 刪除（移到 Notion 垃圾桶，30 天內可以在 Notion 救回）
+        if (id && request.method === 'DELETE') {
+          await notion(env, `/pages/${id}`, 'PATCH', { archived: true });
+          return json({ ok: true });
+        }
+      }
+
+      // 品牌尺寸表
+      if (parts[0] === 'sizes') {
+        const id = parts[1];
+        const sizesDb = await ensureSizesDb(env, needDb());
+        const check = (b, isNew) => {
+          if ((isNew || 'brand' in b) && !String(b.brand || '').trim()) throw new HttpError(400, '請填品牌名稱');
+          if ((isNew || 'rows' in b) && !(b.rows || []).some((r) => r && String(r.size || '').trim()))
+            throw new HttpError(400, '至少要有一個尺寸');
+        };
+        if (!id && request.method === 'GET') {
+          const brands = [];
+          let cursor;
+          do {
+            const r = await notion(env, `/databases/${sizesDb}/query`, 'POST', { page_size: 100, start_cursor: cursor });
+            r.results.forEach((pg) => brands.push(pageToBrand(pg)));
+            cursor = r.has_more ? r.next_cursor : undefined;
+          } while (cursor);
+          brands.sort((a, b) => a.brand.localeCompare(b.brand));
+          return json({ brands });
+        }
+        if (!id && request.method === 'POST') {
+          check(body, true);
+          return json({ brand: pageToBrand(await createBrand(env, sizesDb, body)) });
+        }
+        if (id && request.method === 'PATCH') {
+          check(body, false);
+          let imagesChanged = false;
+          if ('images' in body) imagesChanged = !sameList(pageToBrand(await notion(env, `/pages/${id}`)).images, body.images);
+          const page = await notion(env, `/pages/${id}`, 'PATCH', { properties: brandToProps(body) });
+          if (imagesChanged) await replaceImages(env, id, body.images || []);
+          return json({ brand: pageToBrand(page) });
+        }
         if (id && request.method === 'DELETE') {
           await notion(env, `/pages/${id}`, 'PATCH', { archived: true });
           return json({ ok: true });
