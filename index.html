@@ -962,6 +962,8 @@ function wrapLines(ctx, s, maxW, maxLines) {
   for (let i = 0; i < chars.length; i++) {
     if (ctx.measureText(cur + chars[i]).width <= maxW) { cur += chars[i]; continue; }
     if (lines.length === maxLines - 1) { lines.push(fitText(ctx, cur + chars.slice(i).join(''), maxW)); return lines; }
+    // 標點不放在行首：把上一行最後一個字一起帶下來
+    if (/^[，。、！？；：）」』…,.!?;:)]$/.test(chars[i]) && cur.length > 1) { const last = [...cur].pop(); lines.push([...cur].slice(0, -1).join('')); cur = last + chars[i]; continue; }
     lines.push(cur); cur = chars[i];
   }
   if (cur) lines.push(cur);
@@ -990,12 +992,14 @@ async function drawCard(e) {
   const Y0 = M + photoH;
   const hr = cfg.showHeight !== false ? rng(rowOfItem(e.it)) : '';
   const fitTxt = e.it.fit && e.it.fit !== '正常' ? e.it.fit : '';
-  const meta = [['BRAND', e.it.brand], ['SIZE', e.it.size], ['HEIGHT', hr], ['FIT', fitTxt], ['CONDITION', e.it.condition]].filter(m => m[1]);
-  // 只剩一項（例如只有尺寸）時，小標和內容排同一行，不會空出一大塊
-  const compact = meta.length < 2;
+  // 尺寸放在名稱後面，下面那排只放品牌、身高、版型、新舊程度
+  const meta = [['BRAND', e.it.brand], ['HEIGHT', hr], ['FIT', fitTxt], ['CONDITION', e.it.condition]].filter(m => m[1]);
+  // 只剩一項時，小標和內容排同一行；一項都沒有就整排拿掉
+  const compact = meta.length < 2, none = !meta.length;
   const yTitle = Y0 + 104, yLine = Y0 + 146, yKey = Y0 + 206, yVal = compact ? Y0 + 222 : Y0 + 262;
-  const yNote = yVal + 30;
-  const H = Math.round(yNote + (notes.length ? notes.length * NOTE_LH + 10 : 0) + (cfg.footer ? 128 : 56));
+  const infoEnd = none ? yLine : yVal;
+  const yNote = infoEnd + (none ? 16 : 50); // 備註和上面那排拉開一點
+  const H = Math.round((notes.length ? yNote + notes.length * NOTE_LH + 10 : infoEnd + 30) + (cfg.footer ? 128 : 56));
   c.width = W; c.height = H;
   ls('0px'); ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
 
@@ -1019,13 +1023,19 @@ async function drawCard(e) {
     ctx.font = `400 ${T_KEY + 5}px ${F}`; ls('2px'); ctx.fillText('NT$', R - nw - 12, yTitle);
     priceW = nw + 12 + ctx.measureText('NT$').width + 40;
   }
+  const sz = e.it.size ? String(e.it.size) : '', T_SZ = 44;
+  ctx.font = `400 ${T_SZ}px ${F}`; ls('1px'); const szW = sz ? ctx.measureText(sz).width + 26 : 0;
   ctx.textAlign = 'left'; ctx.fillStyle = INK; ctx.font = `500 ${T_TITLE}px ${F}`; ls('4px');
-  ctx.fillText(fitText(ctx, title(e.it), R - L - priceW), L, yTitle);
-  // 細線
-  ls('0px'); ctx.fillStyle = '#DCD3C9'; ctx.fillRect(L, yLine, R - L, 2);
+  const tt = fitText(ctx, title(e.it), R - L - priceW - szW); ctx.fillText(tt, L, yTitle);
+  if (sz) {
+    const tw = ctx.measureText(tt).width;
+    ctx.font = `400 ${T_SZ}px ${F}`; ls('1px'); ctx.fillStyle = '#8A7E76'; ctx.fillText(sz, L + tw + 26, yTitle);
+  }
+  // 細線（下面沒東西就不畫）
+  if (!none || notes.length) { ls('0px'); ctx.fillStyle = '#DCD3C9'; ctx.fillRect(L, yLine, R - L, 2); }
   // 小標資訊：有幾項就平均分幾欄（少一項也不會右邊空一塊）
   const colW = (R - L) / Math.max(meta.length, 2);
-  if (compact) meta.forEach(([k, v]) => {
+  if (none) {} else if (compact) meta.forEach(([k, v]) => {
     ctx.font = `500 ${T_KEY}px ${F}`; ls('5px'); ctx.fillStyle = SUB; ctx.fillText(k, L, yVal);
     const kw = ctx.measureText(k).width;
     ctx.font = `400 ${T_VAL}px ${F}`; ls('1px'); ctx.fillStyle = INK; ctx.fillText(fitText(ctx, v, R - L - kw - 24), L + kw + 24, yVal);
