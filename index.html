@@ -38,6 +38,13 @@ header{position:sticky;top:0;z-index:20;background:rgba(244,239,234,.94);backdro
 .search input{flex:1;border:0;background:none;outline:none;font-size:14px;min-width:0}
 .search .fbtn{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--sub);padding-left:10px;border-left:1px solid var(--line);height:22px}
 .search .fbtn.on{color:var(--accent-d);font-weight:600}
+.search .vbtn{padding-left:9px}
+.search .vbtn svg{width:18px;height:18px}
+.top{position:relative}
+.menu{position:absolute;right:0;top:44px;background:var(--card);border-radius:14px;box-shadow:0 8px 24px rgba(63,56,51,.16);padding:6px;z-index:30;min-width:150px}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:9px;font-size:15px;color:var(--ink)}
+.menu button:active{background:var(--accent-l)}
+.menu svg{color:var(--sub)}
 .tabs{display:flex;gap:6px;overflow-x:auto;margin:12px -18px 0;padding:0 18px 2px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:none;padding:6px 12px;border-radius:999px;font-size:13px;color:var(--sub);border:1px solid var(--line);background:var(--card);display:flex;align-items:center;gap:6px;white-space:nowrap}
@@ -238,15 +245,18 @@ textarea.inp{height:auto;min-height:84px;padding:11px 13px;resize:vertical;line-
   <div class="top">
     <h1>小嘟衣櫥<small id="count"></small></h1>
     <button class="ib" id="btnSizes" title="尺寸查詢"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="19" height="8" rx="2"/><path d="M6.5 8v3M10 8v4M13.5 8v3M17 8v4"/></svg></button>
-    <button class="ib" id="btnStats" title="每月花費"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
     <button class="ib" id="btnSelect" title="選取製作拍賣卡"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8 12 3 3 5-6"/></svg></button>
-    <button class="ib" id="btnView" title="切換瀏覽方式"></button>
-    <button class="ib" id="btnSettings" title="設定"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button class="ib" id="btnMore" title="更多"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+    <div class="menu hidden" id="menu">
+      <button id="btnStats"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>每月花費</button>
+      <button id="btnSettings"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
+    </div>
   </div>
   <div class="search">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8C8079" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" type="search" placeholder="搜尋名稱、品牌、備註" autocomplete="off">
     <button class="fbtn" id="btnFilter">篩選</button>
+    <button class="fbtn vbtn" id="btnView" title="切換瀏覽方式"></button>
   </div>
   <div class="tabs" id="tabs"></div>
 </header>
@@ -569,7 +579,11 @@ $('#btnSelect').onclick = () => { selecting = !selecting; if (!selecting) picked
 $('#selAllSale').onclick = () => { items.filter(i => i.status === '待出售').forEach(i => picked.add(i.id)); render(); };
 $('#selGo').onclick = () => openExport();
 $('#fab').onclick = () => openEditor(null);
-$('#btnSettings').onclick = openSettings;
+$('#btnSettings').onclick = () => { closeMenu(); openSettings(); };
+// 「⋯」選單：每月花費、設定
+const closeMenu = () => $('#menu').classList.add('hidden');
+$('#btnMore').onclick = e => { e.stopPropagation(); $('#menu').classList.toggle('hidden'); };
+document.addEventListener('click', e => { if (!e.target.closest('#menu')) closeMenu(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
 
 /* ================= 篩選 ================= */
@@ -867,7 +881,7 @@ function renderStats() {
   $('#statsBody').querySelectorAll('.bar').forEach(b => b.onclick = () => { stM = +b.dataset.m; renderStats(); });
   $('#statsBody').querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => openDetail(r.dataset.id));
 }
-$('#btnStats').onclick = openStats;
+$('#btnStats').onclick = () => { closeMenu(); openStats(); };
 
 /* ================= 拍賣卡 ================= */
 let ex = [], exTarget = -1;
