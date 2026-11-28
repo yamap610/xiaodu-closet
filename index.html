@@ -1116,7 +1116,12 @@ async function makeCards() {
 // 品牌名稱比對：忽略大小寫、空白、符號（Daily Bebe = dailybebe）
 const normB = s => String(s || '').toLowerCase().replace(/[\s\-_.'’·・]/g, '');
 const normS = s => normB(s).replace(/[호号號]$/, '');
-const findBrand = name => name ? brands.find(b => normB(b.brand) === normB(name)) : null;
+// 也接受只寫其中一部分：尺寸表叫「花生家 Peanuts House」，衣服寫「花生家」或「Peanuts House」都對得上
+const findBrand = name => {
+  const n = normB(name); if (!n) return null;
+  return brands.find(b => normB(b.brand) === n)
+    || brands.find(b => { const bn = normB(b.brand); return n.length >= 2 && bn.includes(n) || bn.length >= 2 && n.includes(bn); }) || null;
+};
 const rng = r => r && r.hMin != null && r.hMax != null ? `${r.hMin}–${r.hMax}cm` : '';
 const sizeLabel = r => r.alt ? `${r.size}（${r.alt}）` : r.size;
 // 後來才補的預設品牌：資料庫已經建好的話，打開時自動補進 Notion（每個只補一次，刪掉後不會再跑回來）
